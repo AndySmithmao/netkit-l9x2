@@ -1,0 +1,80 @@
+﻿本目录里的文件来自 wpf\setup\ 下的几个地方（为了方便阅读拍平了，实际构建时按下列路径）：
+
+  build-installer.ps1          ← wpf\setup\build-installer.ps1
+  micasetup.json               ← wpf\setup\micasetup.json
+  Favicon.ico                  ← wpf\setup\Favicon.ico
+  Favicon.png                  ← wpf\setup\Favicon.png        （安装器主图标，蓝底向下箭头进托盘）
+  FaviconSetup.png             ← wpf\setup\FaviconSetup.png   （安装程序图标，带绿色 + 徽标）
+  FaviconUninst.png            ← wpf\setup\FaviconUninst.png  （卸载图标，灰底向上箭头 + 红色 − 徽标）
+  app.ico                      ← wpf\app.ico
+  app.manifest                 ← wpf\app.manifest
+  EnvCheckHelper.cs            ← wpf\setup\.inject\EnvCheckHelper.cs
+  EnvTest.cs                   ← wpf\setup\.inject\EnvTest.cs
+  make-cert.ps1                ← wpf\setup\cert\make-cert.ps1
+
+注意：
+
+1) micasetup.json 里的 "Template" 是**绝对路径**，但 build-installer.ps1 在调
+   makemica 之前会把它改写成 <MicaTools>\template\default.7z（见脚本里
+   `$cfg.Template = ...` 那两行）。所以正常走 build-installer.ps1 **不用手改**；
+   只有你绕过它直接调 makemica 时才需要改。
+
+2) build-installer.ps1 的 5.5/7 和 5.6/7 两步会把
+   .inject\EnvCheckHelper.cs 和 .inject\UninstallHelper 的注入代码
+   写进 makemica 生成的 .dist\Helper\Setup\ 里。
+   也就是说 .inject\ 下的文件是**构建期补丁源**，不是直接参与编译的。
+
+构建产物（.dist\ / publish\ / bin\ / obj\ / app\ / *.7z / 安装包）都不在本包里，
+跑一次 build-installer.ps1 会重新生成。
+════════════════════════════════════════════════════════════════
+★ 2026-10-17 更新：能构建到什么程度
+════════════════════════════════════════════════════════════════
+
+【主程序】可以直接编译，而且一定带脚本：
+
+    dotnet build src\app\VrcTool.csproj -c Release
+
+  VrcTool.csproj 已改成 `<ScriptPs1 Include="..\scripts\*.ps1" />`，
+  所以**别再单独把 src\scripts 拷到 src\app\Scripts** —— 只要保持
+  src\app 与 src\scripts 的相对位置不变即可。一个脚本都没匹配到时，
+  MSBuild 会直接报错（以前是编译通过、运行时报「找不到内置脚本」）。
+
+【安装包】需要把 build-installer.ps1 期待的布局拼出来：
+
+  build-installer.ps1 的路径推导是
+      $WpfDir    = <主程序目录>          （显式传 -WpfDir，或脚本在 <WpfDir>\setup\ 下）
+      $SetupDir  = <WpfDir>\setup
+      $SrcScripts= <WpfDir 的上级>\dist\scripts
+                   （找不到时自动回退到 <WpfDir 的上级>\src\scripts，2026-10-17 起支持）
+      $MicaTools = <WpfDir 的上级>\micasetup\extract\build
+
+  推荐做法（保留 src\ 布局，只补 setup 的位置）：
+
+    $dst = 'C:\somewhere'
+    New-Item -ItemType Directory -Path "$dst\app\setup" -Force
+    Copy-Item src\app\*     "$dst\app" -Force
+    Copy-Item src\setup\*   "$dst\app\setup" -Force
+    New-Item -ItemType Directory -Path "$dst\app\setup\.inject" -Force
+    Move-Item "$dst\app\setup\EnvCheckHelper.cs" "$dst\app\setup\.inject\" -Force
+    Move-Item "$dst\app\setup\EnvTest.cs"        "$dst\app\setup\.inject\" -Force
+    New-Item -ItemType Directory -Path "$dst\app\setup\cert" -Force
+    Move-Item "$dst\app\setup\make-cert.ps1"     "$dst\app\setup\cert\" -Force
+    # 脚本源目录：<WpfDir 的上级>\src\scripts（自动识别，不用再手工建 dist\scripts）
+    New-Item -ItemType Directory -Path "$dst\src\scripts" -Force
+    Copy-Item src\scripts\*.ps1 "$dst\src\scripts" -Force
+
+    # 2026-10-17 起：-Dotnet / -MSBuildExe / -WpfDir / -MicaTools 都可以不传（自动探测）。
+    # 如果自动探测不对，再显式指定，例如：
+    #   -MSBuildExe 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe'
+    #   -Dotnet 'C:\Program Files\dotnet\dotnet.exe'
+    powershell -ExecutionPolicy Bypass -File "$dst\app\setup\build-installer.ps1" `
+               -WpfDir "$dst\app" -MicaTools '<makemica 所在目录>'
+
+  （另一种做法是直接沿用作者开发机的老布局：<root>\wpf\setup + <root>\dist\scripts，
+  两种都支持；只要 0.5/7 能同时找到「源脚本目录」和「目标脚本目录」即可。）
+
+  前置条件仍然缺一不可：VS BuildTools 2026 的 MSBuild、makemica 2.5.6 + 7z + template\default.7z、
+  一张带私钥的代码签名证书（cert\make-cert.ps1 可自签）。缺哪个 0/7 会直接报出来。
+
+⚠ 构建前先杀掉正在跑的程序，否则 bin\Release 里的 dll 被锁，会报
+   MSB3021 / MSB3027「文件被 .NET Host (PID) 锁定」。

@@ -1,0 +1,16 @@
+﻿<Application x:Class="VrcTool.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             StartupUri="MainWindow.xaml">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <!-- 这里写的只是「初始」主题字典；真正的亮/暗由 App.xaml.cs 的 OnStartup
+             按系统设置覆盖 —— 它在 MainWindow 创建之前就换好了，所以看不到闪烁。 -->
+        <ui:ThemesDictionary Theme="Dark" />
+        <ui:ControlsDictionary />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

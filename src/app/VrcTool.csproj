@@ -1,0 +1,113 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>annotations</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- 只为了用 System.Windows.Forms.NotifyIcon 做托盘图标：
+         WPF-UI 4.3.0 没有托盘类型，引第三方包又要多一个依赖。
+         注意 main 里所有类型都要用别名限定（WPF 和 WinForms 都有 Application / MessageBox）。 -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- WinForms 分析器会抱怨 app.manifest 里的 DPI 设置（WFAC010），要求改用
+         ApplicationHighDpiMode。但那是 WPF 的 PerMonitorV2 必需项，删了会让
+         抽屉标题栏高度、窗口位置全错位。我们只是借 WinForms 的 NotifyIcon 画个
+         托盘图标，并不走 WinForms 的 Application 启动路径，所以这条警告不适用。 -->
+    <!-- WFAC010 是旧编号，SDK 10 起改名 WFO0003；两个都抑制 -->
+    <NoWarn>$(NoWarn);WFAC010;WFO0003</NoWarn>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>VRChat优选工具</AssemblyName>
+    <RootNamespace>VrcTool</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
+    <Version>0.0.1-beta</Version>
+    <AssemblyVersion>0.0.1.0</AssemblyVersion>
+    <FileVersion>0.0.1.0</FileVersion>
+    <AssemblyTitle>VRChat优选工具</AssemblyTitle>
+    <Product>VRChat优选工具</Product>
+    <!-- embedded：崩溃时 data\error.log 里的堆栈才有行号（对外交付不带独立 pdb） -->
+    <DebugType>embedded</DebugType>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+  </ItemGroup>
+
+  <!-- 把所有 PowerShell 脚本编译进 EXE，运行时解压到 %TEMP%，退出时清理。
+       这样安装目录里不会出现任何 .ps1 文件。
+       LogicalName 把资源名固定成 "Scripts/<文件名>"，C# 侧直接按这个名字找 ——
+       以前是靠 ".Scripts." 这个字符串标记去抠，改命名空间或加子目录就会静默漏脚本。
+
+       ★ 路径是 ..\scripts\*，不是 Scripts\* ★
+         本仓库把脚本放在 src\scripts\，主程序在 src\app\。
+         以前这里写 Include="Scripts\*.ps1"，在源码树的目录结构下**匹配 0 个文件**：
+         编译能过、装完能启动，但点任何按钮都是「找不到内置脚本」。
+       ★ 只嵌「用户可达」的脚本 ★
+         `src\scripts\` 里有 25 个 .ps1，但 GUI 只会调用其中 16 个（10 个页面入口 +
+         它们间接用到的 list-and-pick / speedtest-list / pick-ip + 两个 lib）。
+         剩下 9 个是开发期脚本（调参、取证、A/B），其中 3 个还有未定义变量历史。
+         把它们排除掉：EXE 小一点，攻击面小一点，也不会有人误点到半成品脚本。
+         排除清单必须和 tools\verify.ps1 的解析保持一致（它读同一份 Exclude）。 -->
+
+  <!-- 脚本目录有两种布局：
+         · 源码树：<src>\app + <src>\scripts   → 用 ..\scripts
+         · 安装包构建布局：<root>\wpf + <root>\src\scripts，且 0.5/7 会把脚本同步到
+           <wpf>\Scripts → 优先用本地的 Scripts\（存在就用它）
+       只能二选一，两个都 Include 会导致同名 LogicalName 冲突。 -->
+  <PropertyGroup>
+    <ScriptsDir Condition="Exists('$(MSBuildProjectDirectory)\Scripts')">Scripts</ScriptsDir>
+    <ScriptsDir Condition="'$(ScriptsDir)' == ''">..\scripts</ScriptsDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ScriptPs1 Include="$(ScriptsDir)\*.ps1"
+               Exclude="$(ScriptsDir)\ab-test.ps1;$(ScriptsDir)\dns-foreign-test.ps1;$(ScriptsDir)\rescan-cf.ps1;$(ScriptsDir)\rescan-cfr.ps1;$(ScriptsDir)\sni-audit.ps1;$(ScriptsDir)\sni-block-forensics.ps1;$(ScriptsDir)\stability-test.ps1;$(ScriptsDir)\tune2.ps1;$(ScriptsDir)\vrchat-optimize-ip.ps1" />
+    <EmbeddedResource Include="@(ScriptPs1)" LogicalName="Scripts/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- 一个脚本都没匹配到时直接让构建失败，别等到用户点按钮才发现 -->
+  <Target Name="VerifyEmbeddedScripts" BeforeTargets="CoreCompile">
+    <Error Condition="'@(ScriptPs1)' == ''"
+           Text="没有匹配到任何 PowerShell 脚本（$(ScriptsDir)\*.ps1）。检查 src\scripts 或 wpf\Scripts 是否存在、路径是否被移动。" />
+  </Target>
+
+  <!-- ==========================================================================
+       内置内核（winws / mihomo）
+          ============================================
+       以前内核靠脚本从 GitHub 下载，国内经常失败，用户只看到"服务没启动"。
+       现在直接打进程序集，运行时释放到 %ProgramData%\VrcTool\drivers\。
+
+       布局：
+         · 源码树：<src>\drivers\*
+         · 安装包构建布局：<root>\src\drivers\*（0.5/7 会同步到 <wpf>\drivers）
+       与脚本同样的双布局问题：优先用本地的 drivers\，没有就往上找 ..\drivers。
+       ========================================================================== -->
+  <PropertyGroup>
+    <DriversDir Condition="Exists('$(MSBuildProjectDirectory)\drivers')">drivers</DriversDir>
+    <DriversDir Condition="'$(DriversDir)' == ''">..\drivers</DriversDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <DriverBin Include="$(DriversDir)\*" />
+    <EmbeddedResource Include="@(DriverBin)" LogicalName="Drivers/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <Target Name="VerifyEmbeddedDrivers" BeforeTargets="CoreCompile">
+    <Error Condition="'@(DriverBin)' == ''"
+           Text="没有匹配到内置内核文件（$(DriversDir)\*）。检查 src\drivers 是否存在（winws.exe / cygwin1.dll / WinDivert.dll / WinDivert64.sys / mihomo.exe）。" />
+  </Target>
+
+  <!-- 打包用目录不参与 C# 编译 -->
+  <ItemGroup>
+    <Compile Remove="setup\**" />
+    <Page Remove="setup\**" />
+    <None Remove="setup\**" />
+    <Resource Remove="setup\**" />
+    <EmbeddedResource Remove="setup\**" />
+    <Content Remove="setup\**" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,21 @@
+# 构建产物
+obj/
+bin/
+publish/
+.dist/
+*.user
+*.suo
+.vs/
+
+# 运行时/缓存
+.tmp/
+.nuget/
+*.log
+*.cache.json
+
+# 大文件（从上游自行获取）
+src/drivers/mihomo.exe
+artifacts/
+
+# 构建期生成（含只读 token 占位），不入库
+src/app/UpdaterToken.g.cs

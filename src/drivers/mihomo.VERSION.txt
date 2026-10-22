@@ -1,0 +1,1 @@
+Mihomo Meta v1.19.32 windows amd64 with go1.26.8 Wed Sep 30 17:00:11 UTC 2026
