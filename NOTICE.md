@@ -1,41 +1,33 @@
-# NOTICE — 第三方组件与许可
+# 第三方组件
 
-本仓库 **代码** 采用 [MIT 许可](LICENSE)。
-**随附的第三方二进制**各自遵循上游许可，列表如下；如需再分发，请同时满足对应许可的条款。
+本仓库代码用 MIT（见 `LICENSE`）。随仓库分发的二进制不适用 MIT，各自跟随上游许可。
 
-## 运行期二进制
+## 内核与运行时
 
-| 组件 | 文件 | 许可 | 上游 |
-|---|---|---|---|
-| mihomo（Clash.Meta） | `src/drivers/mihomo.exe`（不在仓库，需自行放入） | MIT | https://github.com/MetaCubeX/mihomo |
-| zapret（winws） | `src/drivers/winws.exe` | 自定义（仓库未附标准 LICENSE，请遵循上游说明） | https://github.com/bol-van/zapret |
-| zapret-win-bundle | Windows 打包来源 | 同上 | https://github.com/bol-van/zapret-win-bundle |
-| WinDivert | `src/drivers/WinDivert.dll`、`WinDivert64.sys` | **LGPL-3.0 或 GPL-2.0（双许可，二选一）** | https://github.com/basil00/WinDivert |
-| Cygwin | `src/drivers/cygwin1.dll` | **LGPL-3.0 + 链接例外** | https://cygwin.com/ |
+`src/drivers/winws.exe` 来自 zapret 的 Windows 打包（bol-van/zapret-win-bundle）。
+上游仓库没有附标准 LICENSE 文件，README 里引用了一份 LICENSE.txt 但仓库根目录找不到，
+分发前请先确认上游的授权说明。
 
-### LGPL 合规说明
+`src/drivers/cygwin1.dll` 是 Cygwin 的运行库，LGPL-3.0 加链接例外，源码在 https://cygwin.com/ 。
 
-- `WinDivert.dll` / `WinDivert64.sys` / `cygwin1.dll` 以**独立文件**形式随包分发，
-  本项目未链接、未修改其源码，符合 LGPL 动态链接要求；
-- 若你需要替换或修改这些组件，可直接用上游编译的版本覆盖 `src\drivers\` 下的同名文件，无需改动本项目代码；
-- 上游源码与许可全文见上表链接。
+`src/drivers/WinDivert.dll` 和 `WinDivert64.sys` 来自 WinDivert，双许可：LGPL-3.0 或 GPL-2.0，可任选其一，
+源码在 https://github.com/basil00/WinDivert 。
 
-## 框架与依赖
+`mihomo.exe` 不随仓库分发，需要自己从 https://github.com/MetaCubeX/mihomo 下载，MIT 许可。
 
-| 组件 | 用途 | 许可 | 上游 |
-|---|---|---|---|
-| .NET / WPF | 运行时与界面框架 | MIT | https://github.com/dotnet/wpf |
-| WPF-UI（lepoco） | Fluent 控件库 | MIT | https://github.com/lepoco/wpfui |
-| MicaSetup | 安装器骨架 | MIT | https://github.com/LemonPrefect/MicaSetup |
+关于 LGPL：WinDivert 和 cygwin1.dll 都以独立文件形式随包分发，没有做静态链接，也没有修改源码，
+符合 LGPL 对动态链接的要求。如果需要替换或修改，直接用上游编译的版本覆盖 `src\drivers\` 下的同名文件即可，
+不用改本项目代码。
+
+## 框架
+
+.NET 与 WPF（https://github.com/dotnet/wpf），MIT。
+WPF-UI（https://github.com/lepoco/wpfui），MIT，Fluent 风格控件。
+MicaSetup（https://github.com/LemonPrefect/MicaSetup），MIT，安装器骨架。
 
 ## 数据来源
 
-| 来源 | 用途 |
-|---|---|
-| Cloudflare IP Ranges | hosts 优选的候选网段 |
-| AWS CloudFront ip-ranges.json | hosts 优选的候选网段 |
-| APNIC / ipinfo | IP 归属查询 |
+hosts 优选的候选网段来自 Cloudflare 公布的 IP 段和 AWS CloudFront 的 ip-ranges.json。
+IP 归属查询用过 APNIC 和 ipinfo 的公开数据。
 
-## 灵感与参考
-
-- [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev)：节点卡片墙的交互参考。
+节点卡片墙的交互参考了 Clash Verge Rev（https://github.com/clash-verge-rev/clash-verge-rev）。
