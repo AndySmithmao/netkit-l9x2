@@ -5,7 +5,7 @@
 //  在 InstallViewModel 解压完主程序之后调用。
 //
 //  依赖：winws.exe / WinDivert.dll / WinDivert64.sys / cygwin1.dll
-//        原始来源在 GitHub（国内直连不稳），所以走国内镜像，
+//        原始来源在 GitHub（部分网络下直连不稳），所以按镜像列表尝试，
 //        运行时先测速，从最快的源下载，失败自动换下一个。
 //
 //  本版本加固（对应「镜像投毒 / 断点续传 / 失败可见」三件事）：
@@ -88,7 +88,7 @@ namespace MicaSetup.Helper
         private const string RawBase =
             "https://raw.githubusercontent.com/bol-van/zapret-win-bundle/" + CommitSha + "/zapret-winws";
 
-        /// <summary>下载源：国内镜像优先，GitHub 原始兜底。全部锁在同一个 commit 上。</summary>
+        /// <summary>下载源：镜像优先，GitHub 原始地址兜底。全部锁在同一个 commit 上。</summary>
         public static readonly Source[] Sources = new Source[]
         {
             new Source("gh-proxy",   "https://gh-proxy.com/" + RawBase),
@@ -525,7 +525,7 @@ namespace MicaSetup.Helper
             if (best == null)
             {
                 LastFailureSummary = "所有镜像都不可用（" + Sources.Length + " 个源在测速阶段全部失败），" +
-                    "待下载：" + Names(missing) + "；最后错误：无可用镜像（DNS/代理/被墙）。";
+                    "待下载：" + Names(missing) + "；最后错误：无可用下载源（DNS 或代理不可用）。";
                 LogWarn(log, "所有镜像都不可用");
                 LogWarn(log, LastFailureSummary);
                 if (report != null) report(100, "组件下载失败：所有镜像都不可用");

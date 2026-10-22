@@ -24,6 +24,9 @@ namespace VrcTool
         public double? Top { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }
+        /// <summary>界面语言代码（zh-CN / en / ja / ko / ru / es）</summary>
+        public string Language { get; set; } = "zh-CN";
+
         public bool Maximized { get; set; }
 
         public bool HelpCardVisible { get; set; } = true;

@@ -13,7 +13,7 @@
 #    Set-Content / [IO.File]::WriteAllText / Out-File 全都是「以 Create 模式
 #    打开」—— 打开的那一瞬间文件就被**截断成 0 字节**，然后才往里写内容。
 #
-#    实测（Windows Defender 实时保护 + 行为监控开着时）：
+#    本机实测（Windows Defender 实时保护 + 行为监控开着时）：
 #      原地写 hosts 有极高概率被拦下并抛 "流不可读" 或 "正由另一进程使用"，
 #      而此时文件**已经是 0 字节**。
 #    实测数据：连写 30 次，28 次得到一个 0 字节的 hosts。

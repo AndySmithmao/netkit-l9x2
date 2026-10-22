@@ -12,7 +12,7 @@
 # =============================================================================
 [CmdletBinding()]
 param(
-    [string]$Version    = '0.0.1-beta',
+    [string]$Version    = '0.0.2-beta',
     # 决定默认安装目录 C:\Program Files\<InstallFolder>
     [string]$InstallFolder = 'VRChat优选工具',
     [string]$Publisher  = 'VRChat-Tool',
@@ -48,10 +48,10 @@ function Resolve-Dotnet {
     param([string]$Given)
     if ($Given -and (Test-Path $Given)) { return $Given }
     $cands = @(
-        (Join-Path $env:ProgramFiles 'dotnet\dotnet.exe')
+        (Join-Path $env:ProgramFiles 'dotnet\dotnet.exe'),
+        'C:\Opencode\.dotnet10\dotnet.exe',
+        'C:\Opencode\.dotnet\dotnet.exe'
     )
-    # 允许用环境变量指向非标准安装位置（例如便携 SDK）
-    if ($env:DOTNET_ROOT) { $cands += (Join-Path $env:DOTNET_ROOT 'dotnet.exe') }
     foreach ($c in $cands) {
         if (Test-Path $c) {
             $sdks = @(& $c --list-sdks 2>$null)
@@ -158,13 +158,13 @@ $SrcScripts = Join-Path $ProbeRoot 'dist\scripts'
 $DstScripts = Join-Path $WpfDir 'Scripts'
 
 # 布局兼容：老布局是 <root>\dist\scripts + <root>\wpf\Scripts；
-# 源码树布局是 src\scripts + src\app（wpf 的对应物叫 src\app）。
+# 交付包布局是 src\scripts + src\app（wpf 的对应物叫 src\app）。
 # 以前只认第一种，于是「按包里的说明拼出来的目录」会在这里直接 throw。
 if (-not (Test-Path $SrcScripts)) {
     $alt = Join-Path $ProbeRoot 'src\scripts'
     if (Test-Path $alt) {
         $SrcScripts = $alt
-        Say "  脚本源目录改用源码树布局: $alt"
+        Say "  脚本源目录改用交付包布局: $alt"
     }
 }
 if (-not (Test-Path $SrcScripts)) { throw "找不到脚本源目录: $SrcScripts（也没有 <root>\src\scripts）" }
@@ -271,20 +271,6 @@ if (Test-Path $Verify) {
 }
 
 # =============================================================================
-# ---------------------------------------------------------------- 生成 token 占位
-# UpdaterToken.g.cs 不入库（含本机路径/凭据占位），构建期生成。
-# 需要把只读 token 编进 exe 时，构建前设置 $env:VRCTOOL_GH_TOKEN。
-$tokenVal = if ($env:VRCTOOL_GH_TOKEN) { $env:VRCTOOL_GH_TOKEN } else { '' }
-$genFile = Join-Path $WpfDir 'UpdaterToken.g.cs'
-@"
-// 构建期自动生成，请勿手工修改，也不要提交到仓库。
-internal static class UpdaterToken
-{
-    public const string Value = "$tokenVal";
-}
-"@ | Out-File $genFile -Encoding utf8
-Say ("UpdaterToken.g.cs 已生成（token: " + $(if ($tokenVal) { '已注入' } else { '空' }) + "）")
-
 Head '1/7  发布主程序（自包含单文件）'
 $pub = Join-Path $WpfDir 'publish'
 if (Test-Path $pub) { Remove-Item $pub -Recurse -Force }
@@ -358,7 +344,7 @@ if ($c14 -gt 0) { Say ("C#14 语法共改写 $c14 处（兼容 VS 2022）") }
 
 # ---------------------------------------------------------------------------
 # ★ .NET Framework 目标版本自适应 ★
-#   makemica 生成的是 net472。如果若本机只装了 4.8 开发包（没有 4.7.2），
+#   makemica 生成的是 net472。如果这台机器只装了 4.8 开发包（没有 4.7.2），
 #   dotnet msbuild 会直接 MSB3644「找不到 v4.7.2 的引用程序集」。
 #   4.8 是 Win10 1803+ 自带，重定向过去不影响目标机；反之不重定向就编不了。
 # ---------------------------------------------------------------------------
@@ -432,7 +418,7 @@ $inject = @'
                 // 环境检测 + 依赖组件自动下载
                 //   主程序是自包含 .NET 8，不需要系统装运行时；
                 //   真正需要的是 winws.exe / WinDivert 这套加速组件。
-                //   原始来源在 GitHub，国内直连不稳，所以走国内镜像并先测速。
+                //   原始来源在 GitHub，部分网络下直连不稳，所以按镜像列表依次尝试。
                 // ============================================================
                 try
                 {

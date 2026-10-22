@@ -30,7 +30,7 @@ if ([string]::IsNullOrEmpty($Root)) { $Root = Split-Path -Parent $PSScriptRoot }
 
 # 应当受检查的清单（按布局自动拼，不再写死 wpf\ / dist\）
 #   老布局：<root>\wpf + <root>\dist\scripts
-#   源码树：<root>\src\app + <root>\src\scripts
+#   交付包：<root>\src\app + <root>\src\scripts
 $WpfDir = Join-Path $Root 'wpf'
 if (-not (Test-Path -LiteralPath $WpfDir)) { $WpfDir = Join-Path $Root 'src\app' }
 $SetupDir = Join-Path $WpfDir 'setup'

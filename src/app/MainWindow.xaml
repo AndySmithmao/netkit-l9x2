@@ -220,6 +220,21 @@
               </Grid.ColumnDefinitions>
 
               <StackPanel Grid.Column="0" Margin="0,0,22,0">
+                <ui:TextBlock FontTypography="BodyStrong" Text="语言"
+                              Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <ComboBox x:Name="CmbLanguage" Height="32" Margin="0,8,0,0"
+                          SelectionChanged="CmbLanguage_SelectionChanged">
+                  <ComboBoxItem Content="简体中文" Tag="zh-CN" IsSelected="True" />
+                  <ComboBoxItem Content="English" Tag="en" />
+                  <ComboBoxItem Content="日本語" Tag="ja" />
+                  <ComboBoxItem Content="한국어" Tag="ko" />
+                  <ComboBoxItem Content="Русский" Tag="ru" />
+                  <ComboBoxItem Content="Español" Tag="es" />
+                </ComboBox>
+
+                <Border Height="1" Margin="0,12,0,10"
+                        Background="{DynamicResource CardStrokeColorDefaultBrush}" />
+
                 <ui:TextBlock FontTypography="BodyStrong" Text="外观"
                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <RadioButton x:Name="RbThemeSystem" GroupName="themeChoice" Content="跟随系统（推荐）"

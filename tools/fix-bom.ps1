@@ -30,7 +30,7 @@ $ErrorActionPreference = 'Continue'
 # "Cannot bind argument to parameter 'Path' because it is null"。
 if (-not $Root) { $Root = Split-Path $PSScriptRoot -Parent }
 
-# 按布局自动拼（老布局 wpf\ + dist\scripts；源码树 src\app + src\scripts）
+# 按布局自动拼（老布局 wpf\ + dist\scripts；交付包 src\app + src\scripts）
 $WpfDir = Join-Path $Root 'wpf'
 if (-not (Test-Path -LiteralPath $WpfDir)) { $WpfDir = Join-Path $Root 'src\app' }
 $SetupDir = Join-Path $WpfDir 'setup'

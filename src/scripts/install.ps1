@@ -104,8 +104,8 @@ function Test-Alive { param([string]$Code) return ($Code -match '^[1-5]\d\d$') }
 # ---------------------------------------------------------------------------
 # 验证某个 IP 是否承载目标 zone
 #
-# 关键: 不能用被墙域名做 HTTP 验证 —— 装好之前那些域名本来就通不了。
-#       所以用【同 provider 里没被墙的域名】做 TLS 握手 + 证书 CN 校验。
+# 关键: 不能用受干扰的域名做 HTTP 验证 —— 装好之前那些域名本来就通不了。
+#       所以用【同 provider 里可正常访问的域名】做 TLS 握手 + 证书 CN 校验。
 #       Cloudflare -> api.vrchat.cloud  (未封锁)
 #       CloudFront -> files.vrchat.cloud (未封锁)
 # ---------------------------------------------------------------------------
@@ -212,7 +212,7 @@ try {
 
 if ($hvciOn) {
     Show ''
-    Warn '若本机开着「内存完整性（HVCI）」—— WinDivert 会装不上过滤规则，安装必定失败。'
+    Warn '这台机器开着「内存完整性（HVCI）」—— WinDivert 会装不上过滤规则，安装必定失败。'
     Show '      处理：设置 → 隐私和安全性 → Windows 安全中心 → 设备安全性 →' Yellow
     Show '            内核隔离 → 关闭「内存完整性」→ 重启电脑 → 再跑「安装」。' Yellow
     Show '      （系统级防护开关，开不开由你决定；但它和 WinDivert 这类工具不兼容）' DarkGray
@@ -314,7 +314,7 @@ Ok $InstallDir
 
 # ============================================================================
 Step '2/6' '下载工具文件（约 4.5 MB）'
-# 原始地址在国内不稳，优先走可用镜像。
+# 原始地址在部分网络下不稳，优先走可用镜像。
 #
 # ★ 源地址锁死到一个具体 commit —— 用 master 的话上游一改，所有用户下次装拿到的
 #   就是另一个二进制，SHA256 校验也就无从谈起（ISSUES #5 / D7）。
@@ -392,16 +392,16 @@ AddLog "工具下载完成（commit $CommitSha，4 个文件 SHA256 全部通过
 
 # ============================================================================
 Step '3/6' '解析各域名真实 IP（多 DoH 源交叉验证 + 证书校验）'
-Show '      提示: 用同 provider 里【未被墙】的域名做证书校验' DarkGray
+Show '      提示: 用同 provider 里【可正常访问】的域名做证书校验' DarkGray
 Show '            Cloudflare -> api.vrchat.cloud   CloudFront -> files.vrchat.cloud' DarkGray
 Show ''
 
 $Resolved = @{}
 foreach ($h in $AllHosts) {
-    # 选校验用的 SNI：必须是同 provider 且未被墙的域名
+    # 选校验用的 SNI：必须是同 provider 且可正常访问的域名
     if ($CfHosts -contains $h)       { $probe = 'api.vrchat.cloud' }
     elseif ($CfrHosts -contains $h)  { $probe = 'files.vrchat.cloud' }
-    else                             { $probe = $h }   # 第三方域名本身被墙，只能靠兜底
+    else                             { $probe = $h }   # 第三方域名本身不可达，只能靠兜底
 
     $ips = Resolve-Real $h
     $picked = ''
@@ -597,7 +597,7 @@ if ($svcKept) {
 #   binPath= 和 "\"...winws.exe\" --wf-tcp=..." 两个独立参数，
 #   sc 认不出来 -> 直接打印用法说明并退出（服务根本没建）。
 #
-#   实测四种写法：
+#   本机实测四种写法：
 #     & "$env:SystemRoot\System32\sc.exe" create $n binPath= $p start= auto   -> ✗ 打印用法
 #     & "$env:SystemRoot\System32\sc.exe" @('create',$n,'binPath=',$p,...)     -> ✗ 打印用法
 #     New-Service -BinaryPathName $p                -> ✓ binPath 完全正确
@@ -695,7 +695,7 @@ if ($st -notmatch 'RUNNING') {
             if ($dg.SecurityServicesRunning -contains 2) { $hvci = $true }
         } catch { }
         if ($hvci) {
-            Show '      → 若本机开着「内存完整性（HVCI）」，它会拦 WinDivert 的过滤规则。' Yellow
+            Show '      → 这台机器开着「内存完整性（HVCI）」，它会拦 WinDivert 的过滤规则。' Yellow
             Show '        处理：设置 → 隐私和安全性 → Windows 安全中心 → 设备安全性 →' Yellow
             Show '              内核隔离 → 关闭「内存完整性」→ 重启，再跑「安装」。' Yellow
             AddLog 'winws 失败且 HVCI=开启'

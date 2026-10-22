@@ -32,18 +32,18 @@ $Root        = (Resolve-Path -LiteralPath $Root -ErrorAction SilentlyContinue).P
 if (-not $Root) { Write-Host '根目录不存在: 请用 -Root 指定' -ForegroundColor Red; exit 1 }
 
 $WpfDir      = Join-Path $Root 'wpf'
-# 源码树布局：主程序在 src\app\，构建脚本在 src\setup\（没有 wpf\ 这一层）
+# 交付包布局：主程序在 src\app\，构建脚本在 src\setup\（没有 wpf\ 这一层）
 if (-not (Test-Path -LiteralPath $WpfDir)) { $WpfDir = Join-Path $Root 'src\app' }
 $SetupDir    = Join-Path $WpfDir 'setup'
-# 源码树布局：src\setup 与 src\app 并列，不在 app 下面
+# 交付包布局：src\setup 与 src\app 并列，不在 app 下面
 if (-not (Test-Path -LiteralPath $SetupDir)) { $SetupDir = Join-Path $Root 'src\setup' }
 $Csproj      = Join-Path $WpfDir 'VrcTool.csproj'
 $InstallerPs1  = Join-Path $SetupDir 'build-installer.ps1'
 $MicasetupJson = Join-Path $SetupDir 'micasetup.json'
 
-# 脚本目录可能有三处：dist\scripts（老源头）、src\scripts（源码树源头）、
+# 脚本目录可能有三处：dist\scripts（老源头）、src\scripts（交付包源头）、
 # <wpf>\Scripts（编译副本）。按顺序收集，存在几个就查几个 ——
-# 以前写死 dist\scripts ↔ wpf\Scripts，源码树布局下「一个文件都扫不到还报 ok」。
+# 以前写死 dist\scripts ↔ wpf\Scripts，交付包布局下「一个文件都扫不到还报 ok」。
 $ScriptDirs = @()
 foreach ($d in @((Join-Path $Root 'dist\scripts'),
                  (Join-Path $Root 'src\scripts'),

@@ -384,7 +384,7 @@ foreach ($job in $jobs) {
     $targets = @(Expand-Random $ranges)
     Show "    候选 $($targets.Count) 个（主机位已随机化）"
 
-    # 拿不到候选（网段接口挂了/被墙）时以前会"0 个目标也照样跑完并报成功"，
+    # 拿不到候选（网段接口不可用）时以前会"0 个目标也照样跑完并报成功"，
     # GUI 侧看到的是"全部完成但候选池是空的"。现在明确失败。
     if ($targets.Count -eq 0) {
         Bad "没有拿到任何候选 IP（$name 的网段数据为空）"

@@ -216,10 +216,13 @@ namespace VrcTool
                 // 先放开启动保护，再刷新界面（否则 ApplyNav 会直接 return）
                 uiReady = true;
                 ApplyNav();
+            try { InitLanguageUi(); } catch { }
             try { InitUpdateUi(); } catch { }
             // 启动后 5 秒再查更新（不拖慢启动；查到会弹窗问用户，绝不静默安装）
             _ = RunStartupUpdateCheckAsync();
                 LayoutDrawers();
+                // 语言要在布局完成、文字实体化之后应用
+                ApplyLanguage();
 
                 // 程序目录被搬过的话，服务里的绝对路径就失效了，自检并修回来
                 CheckServicePath();
@@ -622,7 +625,7 @@ namespace VrcTool
 
             NavDef drivers = new NavDef("drivers", "内核",
                 "管理两个内置内核：何时开、何时关、用哪个版本。\r\n\r\n" +
-                "  · winws —— DPI 伪装，解决 VRChat 域名被墙\r\n" +
+                "  · winws —— DPI 伪装，解决 VRChat 域名被干扰\r\n" +
                 "  · mihomo —— 代理内核，给游戏流量走代理（见「代理」页）\r\n\r\n" +
                 "两个内核互相独立，可分别开启 / 关闭 / 重启；退出程序时会一起停掉。",
                 "", "", false);
@@ -763,6 +766,8 @@ namespace VrcTool
             {
                 _collapsedHeader = 0;
                 LayoutDrawers();
+                // 语言要在布局完成、文字实体化之后应用
+                ApplyLanguage();
             }
             catch (Exception __ex) { Swallowed(__ex); }
         }
@@ -2211,7 +2216,7 @@ namespace VrcTool
         {
             if (!Ui.ConfirmDanger(
                 "这会停止 VRChatBypass 加速服务。停止后：\r\n" +
-                "  · VRChat 的 API、资源下载、官网都会被墙，游戏进不去；\r\n" +
+                "  · VRChat 的 API、资源下载、官网都不可达，游戏进不去；\r\n" +
                 "  · 想恢复必须**重启电脑** —— WinDivert 驱动停止后会残留内核对象，\r\n" +
                 "    再启动服务会报 FWP_E_IN_USE，软件层清不掉（实测过）。\r\n\r\n" +
                 "这个操作只适合「我要临时换成别的网络方案」的场景。\r\n\r\n" +
@@ -2240,7 +2245,7 @@ namespace VrcTool
                 Append("如果现在就想恢复，直接重启也是最快的。");
 
                 Ui.Warn("加速服务已停止。\r\n\r\n" +
-                        "VRChat 现在进不去（API/资源被墙）。\r\n" +
+                        "VRChat 现在进不去（API/资源不可达）。\r\n" +
                         "要恢复：**重启电脑** → 打开本工具点【安装】。\r\n\r\n" +
                         "（这是 WinDivert 驱动的限制，不是本工具的 bug：停止后内核对象不释放，\r\n" +
                         "  再启动会报 FWP_E_IN_USE，只有重启能清。）",

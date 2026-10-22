@@ -1,6 +1,6 @@
-# tools —— 开发期辅助工具
+﻿# tools —— 开发期辅助工具
 
-这些工具**不随产品分发**，仅供维护者本地构建与验收使用。
+这些工具**不随产品分发**，只给维护者（和 AI agent）用。
 
 > 位置说明：本目录是 `<包根>\tools\`，历史上还堆着一批 DPI 绕过 / 优选 IP 的
 > 实测产物（`*.zip`、`*.log`、`*-results.txt`、`hosts.bak-*` 等），那些是**测试残留**，
@@ -9,7 +9,7 @@
 > | 目录 | 放什么 |
 > | --- | --- |
 > | `tools\`（本目录） | 工程层工具：编码检查、一键盘点、vswhere 还原 |
-> | `tools\` | GUI 自动化工具：截图、点击、vswhere shim 源码（**权威副本**） |
+> | `_review-agentpack\tools\` | GUI 自动化工具：截图、点击、vswhere shim 源码（**权威副本**） |
 > | `tools_py\` | 上面那批工具的副本 + 一批 Python 辅助脚本（md 转换、图标生成……） |
 
 ---
@@ -145,7 +145,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\restore-vswhere.ps1 -Resto
 
 ## 4. vswhere-shim.cs
 
-转发 shim 的源码。**权威副本在 `tools\vswhere-shim.cs`**，
+转发 shim 的源码。**权威副本在 `_review-agentpack\tools\vswhere-shim.cs`**，
 `tools_py\` 下有同名副本（内容一致）。
 
 逻辑：检查参数里有没有 `-products`，没有就补上 `-products *`，
@@ -224,7 +224,7 @@ powershell -File shot.ps1 -TitlePart 安装程序 -Out out.png
 
 - 本目录所有 `.ps1` **必须是 UTF-8 with BOM**（`check-encoding.ps1` 会断言）。
 - **改完 `.ps1` 记得重跑一次 `check-encoding.ps1`**：
-  不少编辑器和批量替换工具在写文件时会**吃掉 BOM**，
+  不少编辑器和 patch 工具（含 AI agent 的「字面量替换」类写的文件）会**吃掉 BOM**，
   内容看着没变，BOM 没了 —— 这个变化在编辑器里完全看不出来，只有检查能发现。
   本目录三个脚本在开发过程中就被这个坑咬过两次。
 - 脚本要能在 **Windows PowerShell 5.1** 下跑，不要用 PS7 专属语法（`??`、`?.`、三元 `?:`）。

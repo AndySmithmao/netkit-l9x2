@@ -27,7 +27,7 @@ namespace VrcTool
     /// 内核更新：从上游 GitHub 检查并下载 winws（bol-van/zapret）与 mihomo（MetaCubeX/mihomo）。
     ///
     /// 三个现实约束：
-    ///   1. 国内直连 github.com 基本不通 → 下载走镜像链；
+    ///   1. 在部分网络下直连 github.com 不通 → 下载走镜像链；
     ///   2. 匿名 API 每小时 60 次 → 检查结果缓存 6 小时；
     ///   3. 换内核有风险 → 先备份 .bak，试启动失败自动回滚。
     /// </summary>

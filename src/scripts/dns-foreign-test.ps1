@@ -1,7 +1,7 @@
 ﻿# 境外 DNS 服务器实测：港/台/日/韩/新 + 欧美，UDP53 / TCP53 / DoH 三种查询方式
 $ProgressPreference = 'SilentlyContinue'
 $DOMAIN = 'vrchat.com'
-$CONTROL = 'www.yahoo.co.jp'   # 对照：未被墙的域名，用来判断服务器本身是否可达
+$CONTROL = 'www.yahoo.co.jp'   # 对照：不受干扰的域名，用来判断服务器本身是否可达
 
 function New-DnsQuery {
     param([string]$Name, [int]$Id)

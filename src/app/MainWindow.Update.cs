@@ -56,17 +56,17 @@ namespace VrcTool
                 if (!appNewer && newer.Count == 0) return;
 
                 System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                sb.AppendLine("发现可用更新：");
+                sb.AppendLine(Localization.T("发现可用更新："));
                 sb.AppendLine();
-                if (appNewer) sb.AppendLine("· 应用  " + Updater.CurrentVersion + " → " + app.Version);
+                if (appNewer) sb.AppendLine("· " + Localization.T("应用") + "  " + Updater.CurrentVersion + " → " + app.Version);
                 foreach (KernelUpdate k in newer) sb.AppendLine("· " + k.Name + "  " + k.Installed + " → " + k.Latest);
                 sb.AppendLine();
-                sb.AppendLine("要现在更新吗？");
+                sb.AppendLine(Localization.T("要现在更新吗？"));
                 sb.AppendLine("· 更新应用会下载安装包并退出本程序");
                 sb.AppendLine("· 更新内核会自动备份旧文件，新版起不来会自动回滚");
                 sb.AppendLine("· 选「否」= 本次不更新，下次启动再问");
 
-                if (!Ui.Question(sb.ToString().Trim(), "发现更新")) { Append("[更新] 用户选择稍后更新"); return; }
+                if (!Ui.Question(sb.ToString().Trim(), Localization.T("发现更新"))) { Append("[更新] 用户选择稍后更新"); return; }
 
                 if (appNewer)
                 {

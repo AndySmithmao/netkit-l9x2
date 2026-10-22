@@ -22,9 +22,9 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
-    <Version>0.0.1-beta</Version>
-    <AssemblyVersion>0.0.1.0</AssemblyVersion>
-    <FileVersion>0.0.1.0</FileVersion>
+    <Version>0.0.2-beta</Version>
+    <AssemblyVersion>0.0.2.0</AssemblyVersion>
+    <FileVersion>0.0.2.0</FileVersion>
     <AssemblyTitle>VRChat优选工具</AssemblyTitle>
     <Product>VRChat优选工具</Product>
     <!-- embedded：崩溃时 data\error.log 里的堆栈才有行号（对外交付不带独立 pdb） -->
@@ -43,7 +43,7 @@
 
        ★ 路径是 ..\scripts\*，不是 Scripts\* ★
          本仓库把脚本放在 src\scripts\，主程序在 src\app\。
-         以前这里写 Include="Scripts\*.ps1"，在源码树的目录结构下**匹配 0 个文件**：
+         以前这里写 Include="Scripts\*.ps1"，在交付包的目录结构下**匹配 0 个文件**：
          编译能过、装完能启动，但点任何按钮都是「找不到内置脚本」。
        ★ 只嵌「用户可达」的脚本 ★
          `src\scripts\` 里有 25 个 .ps1，但 GUI 只会调用其中 16 个（10 个页面入口 +
@@ -53,7 +53,7 @@
          排除清单必须和 tools\verify.ps1 的解析保持一致（它读同一份 Exclude）。 -->
 
   <!-- 脚本目录有两种布局：
-         · 源码树：<src>\app + <src>\scripts   → 用 ..\scripts
+         · 交付包源码树：<src>\app + <src>\scripts   → 用 ..\scripts
          · 安装包构建布局：<root>\wpf + <root>\src\scripts，且 0.5/7 会把脚本同步到
            <wpf>\Scripts → 优先用本地的 Scripts\（存在就用它）
        只能二选一，两个都 Include 会导致同名 LogicalName 冲突。 -->
@@ -81,7 +81,7 @@
        现在直接打进程序集，运行时释放到 %ProgramData%\VrcTool\drivers\。
 
        布局：
-         · 源码树：<src>\drivers\*
+         · 交付包源码树：<src>\drivers\*
          · 安装包构建布局：<root>\src\drivers\*（0.5/7 会同步到 <wpf>\drivers）
        与脚本同样的双布局问题：优先用本地的 drivers\，没有就往上找 ..\drivers。
        ========================================================================== -->

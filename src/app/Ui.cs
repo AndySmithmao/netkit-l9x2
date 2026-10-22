@@ -33,7 +33,7 @@ namespace VrcTool
         /// <summary>只有「确定」的信息框</summary>
         public static void Info(string content, string title = null)
         {
-            Dialog(title, content, null, null, "确定", ControlAppearance.Primary);
+            Dialog(title, content, null, null, Localization.T("确定"), ControlAppearance.Primary);
         }
 
         /// <summary>只有「知道了」的警告框</summary>
@@ -51,7 +51,7 @@ namespace VrcTool
         /// <summary>是 / 否。点「是」返回 true。</summary>
         public static bool Question(string content, string title = null)
         {
-            return Dialog(title, content, "是", null, "否", ControlAppearance.Primary) == WpfMessageBoxResult.Primary;
+            return Dialog(title, content, Localization.T("是"), null, Localization.T("否"), ControlAppearance.Primary) == WpfMessageBoxResult.Primary;
         }
 
         /// <summary>确定 / 取消。点「确定」返回 true。danger=true 时「确定」按钮染红。</summary>
@@ -60,7 +60,7 @@ namespace VrcTool
             ControlAppearance ap = danger ? ControlAppearance.Danger : ControlAppearance.Primary;
             // 注意第 6 个参数是「取消」按钮的样式：以前这里传的是 ap，
             // 于是破坏性操作把「取消」染成了红色、「确定」还是蓝色 —— 视觉引导正好反了。
-            return Dialog(title, content, "确定", null, "取消", ControlAppearance.Secondary, ap)
+            return Dialog(title, content, Localization.T("确定"), null, Localization.T("取消"), ControlAppearance.Secondary, ap)
                    == WpfMessageBoxResult.Primary;
         }
 

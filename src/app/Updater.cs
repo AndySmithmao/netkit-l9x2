@@ -31,7 +31,7 @@ namespace VrcTool
     ///
     /// 两个现实约束：
     ///   1. 匿名 API 每小时 60 次 —— 启动检查会反复消耗，所以结果缓存 6 小时；
-    ///   2. 国内直连 github.com 不通 —— 下载走镜像链（见 KernelUpdater.DownloadWithMirrors）。
+    ///   2. 部分网络下直连 github.com 不通 —— 下载走镜像链（见 KernelUpdater.DownloadWithMirrors）。
     /// </summary>
     internal static class Updater
     {
