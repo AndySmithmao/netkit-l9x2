@@ -1,7 +1,21 @@
-# VRChat Network Optimizer
+<div align="center">
+
+<h1>VRChat Network Optimizer</h1>
+
+<p>VRChat 네트워크 품질을 개선하는 Windows 도구 — hosts 최적화와 선택형 winws(DPI 우회)/mihomo(Clash.Meta) 커널.</p>
+
+<a href="https://github.com/AndySmithmao/netkit-l9x2/releases"><img alt="Release" src="https://img.shields.io/github/v/release/AndySmithmao/netkit-l9x2?style=flat-square&color=1E9BFA"></a>
+<a href="https://github.com/AndySmithmao/netkit-l9x2/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/AndySmithmao/netkit-l9x2/total?style=flat-square&color=1E9BFA"></a>
+<img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-1E9BFA?style=flat-square">
+<img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square">
+
+</div>
+
+<div align="center">
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Русский](README.ru.md) · [Español](README.es.md)
 
+</div>
 VRChat의 네트워크 품질을 개선하는 Windows 데스크톱 도구입니다. winws(zapret의 DPI 우회)와
 mihomo(Clash.Meta) 두 커널을 내장하고, 프록시 없이 동작하는 hosts 최적화 경로도 제공합니다.
 WPF / .NET 10으로 만들었고 실행하려면 관리자 권한이 필요합니다.
@@ -202,3 +216,4 @@ WinDivert는 LGPL-3.0과 GPL-2.0 이중 라이선스, cygwin1.dll은 LGPL-3.0과
 
 저자는 이 소프트웨어를 있는 그대로 제공하며 어떠한 보증도 하지 않습니다.
 사용으로 인한 손해, 서비스 중단, 계정 조치 등에 대해 책임지지 않습니다.
+

@@ -1,7 +1,21 @@
-# VRChat Network Optimizer
+<div align="center">
+
+<h1>VRChat Network Optimizer</h1>
+
+<p>Herramienta para Windows que mejora la calidad de red de VRChat — optimización de hosts y núcleos opcionales winws (elusión DPI) y mihomo (Clash.Meta).</p>
+
+<a href="https://github.com/AndySmithmao/netkit-l9x2/releases"><img alt="Release" src="https://img.shields.io/github/v/release/AndySmithmao/netkit-l9x2?style=flat-square&color=1E9BFA"></a>
+<a href="https://github.com/AndySmithmao/netkit-l9x2/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/AndySmithmao/netkit-l9x2/total?style=flat-square&color=1E9BFA"></a>
+<img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-1E9BFA?style=flat-square">
+<img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square">
+
+</div>
+
+<div align="center">
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Русский](README.ru.md) · [Español](README.es.md)
 
+</div>
 Herramienta de escritorio para Windows que mejora la calidad de red de VRChat. Incluye dos núcleos:
 winws (elusión de DPI de zapret) y mihomo (Clash.Meta), además de una vía de optimización de hosts que no
 requiere proxy. Está escrita en WPF sobre .NET 10 y necesita permisos de administrador para ejecutarse.
@@ -214,3 +228,4 @@ que estás obligado a cumplir.
 
 Los autores ofrecen el software "tal cual", sin garantía de ningún tipo, y no asumen responsabilidad por daños,
 interrupciones del servicio, sanciones de cuenta u otras pérdidas derivadas de su uso.
+

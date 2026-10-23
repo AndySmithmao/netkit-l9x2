@@ -1,7 +1,21 @@
-# VRChat Network Optimizer
+<div align="center">
+
+<h1>VRChat Network Optimizer</h1>
+
+<p>Инструмент для Windows, улучшающий качество соединения VRChat — оптимизация hosts и необязательные ядра winws (обход DPI) и mihomo (Clash.Meta).</p>
+
+<a href="https://github.com/AndySmithmao/netkit-l9x2/releases"><img alt="Release" src="https://img.shields.io/github/v/release/AndySmithmao/netkit-l9x2?style=flat-square&color=1E9BFA"></a>
+<a href="https://github.com/AndySmithmao/netkit-l9x2/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/AndySmithmao/netkit-l9x2/total?style=flat-square&color=1E9BFA"></a>
+<img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-1E9BFA?style=flat-square">
+<img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square">
+
+</div>
+
+<div align="center">
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Русский](README.ru.md) · [Español](README.es.md)
 
+</div>
 Настольная программа для Windows, улучшающая качество сетевого соединения VRChat. Включает два ядра —
 winws (обход DPI из zapret) и mihomo (Clash.Meta), — а также путь оптимизации hosts, не требующий прокси.
 Написана на WPF / .NET 10, для запуска нужны права администратора.
@@ -210,3 +224,4 @@ WinDivert имеет двойную лицензию LGPL-3.0 или GPL-2.0, cy
 
 Авторы предоставляют программу «как есть», без каких-либо гарантий, и не несут ответственности
 за ущерб, перерывы в обслуживании, блокировку учётной записи или иные потери, возникшие в результате использования.
+

@@ -1,141 +1,108 @@
-# VRChat Network Optimizer
+<div align="center">
+
+<h1>VRChat Network Optimizer</h1>
+
+<p>Windows network optimizer for VRChat — hosts optimization, plus optional winws (DPI) and mihomo (Clash.Meta) kernels.</p>
+
+<a href="https://github.com/AndySmithmao/netkit-l9x2/releases"><img alt="Release" src="https://img.shields.io/github/v/release/AndySmithmao/netkit-l9x2?style=flat-square&color=1E9BFA"></a>
+<a href="https://github.com/AndySmithmao/netkit-l9x2/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/AndySmithmao/netkit-l9x2/total?style=flat-square&color=1E9BFA"></a>
+<img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-1E9BFA?style=flat-square">
+<img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square">
+
+</div>
+
+<div align="center">
 
 [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Русский](README.ru.md) · [Español](README.es.md)
 
-A Windows desktop tool that improves VRChat's network quality. It ships two kernels — winws (zapret's DPI desync)
-and mihomo (Clash.Meta) — plus a proxy-free path that optimizes DNS/hosts resolution. Built with WPF on .NET 10,
-runs with administrator privileges.
+</div>
 
-Version 0.0.1-beta. APIs and UI may still change.
+WPF tool on .NET 10 for improving VRChat's network quality. It has two independent paths: optimize the `hosts` file
+so VRChat domains resolve to well-performing IPs, or route matching traffic through a proxy kernel.
+Both can be used alone or together.
 
-## What it addresses
+Current version `0.0.2-beta`. Features and UI may still change.
 
-VRChat's connection quality depends on the route to Photon servers. In some networks you run into one or more of:
+## Features
 
-- DNS returns poorly performing IPs, causing high latency or packet loss;
-- international transit takes a long detour, where a single backbone hop can add well over 100 ms;
-- parts of the path are subject to DPI interference, showing up as failed handshakes or frequent reconnects.
-
-For the first two, the tool scans Cloudflare and CloudFront address ranges, measures latency and download throughput,
-and writes the best-performing IPs into the hosts file. For the third, and for cases where traffic needs to leave through
-a different region, a proxy kernel routes matching traffic by rule. The two approaches work independently or together.
+* **hosts optimization** — scan Cloudflare and CloudFront ranges, measure latency and download throughput, write the best IPs
+  * full scan over 5956 Cloudflare /24 and 16552 CloudFront /24 ranges, pre-filtered with ICMP + TLS
+  * multi-round latency measurement and real download benchmarking, ruling out "low latency but low bandwidth" hosts
+  * entries are written between markers, so uninstall can clean them precisely
+* **one-click flow** — environment check → full scan → latency test → download test → candidate list → write hosts → verify
+* **kernel management**
+  * `winws` (zapret) for DPI desync, `mihomo` (Clash.Meta) for proxy routing
+  * independent start / stop / restart per kernel, with version display
+  * runs as application-managed child processes, stopped together when the app exits
+* **subscription and nodes**
+  * import Clash subscriptions; sends a Clash user agent, tolerates base64 v2ray link formats
+  * card-style node list (inspired by Clash Verge), click to switch, batch latency test
+  * TUN and proxy-mode toggles
+* **Ping** — for a given IP or host, measure real round-trip through every node via TCP + TLS handshake, sorted ascending
+* **updates** — startup check for app and both kernels, asks before updating; kernel updates back up and roll back on failure
+* **localization** — 简体中文 / English / 日本語 / 한국어 / Русский / Español, switchable in settings
+* **tray and autostart** — minimize to tray; kernels only start with the app if you explicitly enable it
 
 ## Download
 
-Release assets use fixed filenames, so these links always point at the newest build:
+> [!NOTE]
+> Asset names are fixed, so both links always point at the latest build.
+>
+> If `github.com` is unreachable on your network, prepend a mirror: `https://ghproxy.net/` before the URL.
 
-- Installer: `https://github.com/AndySmithmao/netkit-l9x2/releases/latest/download/VRChat-Selector-Setup.exe`
-- Portable: `https://github.com/AndySmithmao/netkit-l9x2/releases/latest/download/VRChat-Selector-Portable.exe`
+| Version | Link |
+| --- | --- |
+| Installer (recommended) | [VRChat-Selector-Setup.exe](https://github.com/AndySmithmao/netkit-l9x2/releases/latest/download/VRChat-Selector-Setup.exe) |
+| Portable (no install) | [VRChat-Selector-Portable.exe](https://github.com/AndySmithmao/netkit-l9x2/releases/latest/download/VRChat-Selector-Portable.exe) |
 
-GitHub downloads can be unreliable on some networks. A mirror prefix can be prepended:
+All builds: [Releases](https://github.com/AndySmithmao/netkit-l9x2/releases)
 
-```
-https://ghproxy.net/https://github.com/AndySmithmao/netkit-l9x2/releases/latest/download/VRChat-Selector-Setup.exe
-```
+## Requirements
 
-The built-in updater uses the same mirrors, trying ghproxy.net, gh-proxy.com and ghfast.top in order.
+* Windows 10 or 11, x64
+* Administrator rights — writing the hosts file, loading the WinDivert driver and enabling TUN all need it
+* No .NET runtime installation required (single-file, self-contained build)
 
-The installer is self-signed, so SmartScreen may warn about an unknown publisher; choose "Run anyway".
-Default install path is `C:\Program Files\VRChat优选工具`. The app requests administrator rights at startup —
-writing hosts, loading the WinDivert driver and enabling TUN all require it.
+## Usage
 
-## Three ways to use it
+**hosts only.** Open *One-click* and press start. Wait for the scan and benchmarks, pick an IP from the list,
+the tool writes it to hosts and verifies.
 
-**hosts optimization only.** Open "One-click" and press start. The tool runs an environment check, a full range scan,
-latency measurement, download benchmarking, then shows a candidate list; pick an IP and it writes and verifies it.
-Suited to setups where no proxy is wanted.
+**With proxy nodes.** Paste a Clash subscription in *Subscription*, pick a node in *Nodes*, start mihomo in *Kernel*.
+Enable TUN on the Nodes page and restart mihomo if you want all traffic proxied.
 
-**With proxy nodes.** Paste a Clash subscription on the Subscription page, pick a node on the Nodes page,
-then start mihomo on the Kernel page. Enable TUN on the Nodes page (and restart mihomo) if you want all traffic proxied.
-The Ping page helps compare nodes before choosing.
+**DPI desync.** Start winws in *Kernel*. If an older version registered a `VRChatBypass` service,
+run *Migrate legacy service* first, otherwise two filters compete for the same handle.
 
-**DPI desync with winws.** Start winws on the Kernel page; it uses the bundled desync profile.
-If an older version once registered a `VRChatBypass` service, run "Migrate legacy service" first,
-otherwise two filters will compete for the same handle.
+> [!IMPORTANT]
+> The tool modifies the system hosts file, loads a kernel driver and may enable TUN, which redirects machine-wide
+> traffic. Review the risks before running it on a machine you rely on.
 
-## Pages
+## FAQ
 
-The left navigation is grouped by purpose. One-click is the automated flow described above.
-Ops holds install, uninstall and diagnostics. Workflow has the four individual steps — full scan, latency test,
-download test, pick from list — if you only want one of them.
+* **Why does per-node testing not use ICMP?**
+  mihomo handles ICMP as an unconditional DIRECT, so the kernel cannot pass ICMP to a proxy. Measuring the same IP
+  through US, Japanese and Hong Kong nodes returned about 172 ms every time — that is the local direct path.
+  Node Ping therefore performs a TCP + TLS handshake against port 443, which does separate nodes properly
+  (87 / 80 / 551 ms in the same test).
+* **Why can some targets not be measured per node?**
+  If a target only answers ICMP or a proprietary UDP protocol — Photon game servers behave this way — no TCP port is
+  available and per-node latency is not observable. Only the direct route can be inspected.
+* **Why does an update check sometimes report a rate limit?**
+  GitHub's anonymous API allows 60 requests per hour, and one startup check costs three. Results are cached for six
+  hours; a manual check forces a refresh.
+* **Why are the kernels not Windows services?**
+  Earlier builds registered winws as a service. After `sc stop` the WFP filter objects were not released and the next
+  start failed with `FWP_E_IN_USE 0x8032000A`, recoverable only by rebooting. Child processes avoid that entirely.
+* **Why is the node list empty after importing a subscription?**
+  mihomo binds ports 7891 and 9097. Another instance already running will conflict; stop it and restart mihomo from
+  the Kernel page.
 
-Kernel & Proxy has four pages:
+## Building
 
-- Kernel: start, stop and restart each of winws and mihomo, current version, diagnostics, legacy service migration
-- Subscription: import and update subscription URLs; saving starts mihomo automatically
-- Nodes: card-style node list, click to switch, batch latency test, TUN and proxy-mode toggles
-- Ping: for a given IP or hostname, perform a TCP + TLS handshake through each node, sorted by latency
+Requires the .NET 10 SDK; producing the installer also needs MSBuild from Visual Studio 2022 or 2026.
 
-Settings covers theme, UI scale and the application update entry point.
-
-## Why Ping is not ICMP
-
-mihomo handles ICMP with an unconditional DIRECT, so the core cannot hand ICMP to a proxy.
-Measuring the same IP through US, Japanese and Hong Kong nodes returned roughly 172 ms every time,
-which is the local direct path, so the number carries no information. "Node Ping" here is therefore a TCP handshake —
-a full TLS handshake against port 443 to obtain real round-trip time. Measured against one Google IP:
-Hong Kong 87 ms, Japan 80 ms, United States 551 ms, which separates nodes well enough.
-
-The converse also holds: if a target only answers ICMP or a proprietary UDP protocol — Photon game servers behave
-this way — per-node latency cannot be measured, and only the direct route is observable.
-
-## How hosts entries are written
-
-Selected IPs are written into the system hosts file between a pair of markers, which uninstall removes:
-
-```
-# ===== VRChat-bypass BEGIN =====
-104.18.26.36  example.com
-# ===== VRChat-bypass END =====
-```
-
-Candidate IPs come from 5956 Cloudflare /24 ranges and 16552 CloudFront /24 ranges, pre-filtered with ICMP and TLS,
-then measured with multiple latency rounds plus a real download benchmark.
-
-## Why the kernels are not Windows services
-
-Earlier builds registered winws as a Windows service. After `sc stop` the WFP filter objects were not released,
-and the next start failed with `FWP_E_IN_USE 0x8032000A`, recoverable only by rebooting.
-The kernel now runs as an application-managed child process, cleaned up by executable path;
-three consecutive stop/start cycles complete without error.
-
-How the kernels run:
-
-- winws captures and rewrites packets through WinDivert using the bundled desync profile
-- mihomo handles subscription nodes and rule-based routing; TUN mode needs administrator rights
-
-## Runtime directories
-
-```
-C:\Program Files\VRChat优选工具\
-  tools\                    runtime components (winws.exe, WinDivert, cygwin1.dll)
-  data\logs\session-*.log   session logs
-
-C:\ProgramData\VrcTool\
-  drivers\winws\            extracted on first start
-  drivers\mihomo\           mihomo, config, subscription cache, state.json
-  logs\drivers.log          output of both kernels
-```
-
-Closing the application stops the kernel processes, leaving nothing running in the background.
-
-## Updates
-
-About five seconds after startup the app checks the application and both kernels, and asks before updating;
-declining skips this session. The settings page also exposes a manual check.
-
-An application update downloads the installer, verifies its SHA256, launches it and exits.
-A kernel update renames the old files to `.bak` first, replaces them, then tries to start the new binary,
-rolling back if it fails.
-
-Results are cached for six hours. GitHub's anonymous API allows 60 requests per hour, and one startup check costs
-three requests, so repeated launches would otherwise hit the rate limit. A manual check forces a refresh.
-
-## Building from source
-
-Requires the .NET 10 SDK; producing the installer additionally needs MSBuild from Visual Studio 2022 or 2026.
-
-```
+```powershell
 git clone https://github.com/AndySmithmao/netkit-l9x2.git
 cd netkit-l9x2
 
@@ -144,65 +111,44 @@ dotnet build src\app\VrcTool.csproj -c Release
 powershell -File src\setup\build-installer.ps1
 ```
 
-The build script first runs `tools\verify.ps1`, which checks file encodings (anything containing non-ASCII must be
-UTF-8 with BOM), script syntax, duplication between the two script trees, leftover hardcoded paths,
-the embedded resource list and version consistency. Any failure aborts the build.
+The build script first runs `tools\verify.ps1`, checking file encodings (anything containing non-ASCII must be UTF-8
+with BOM), script syntax, duplication between script trees, leftover hardcoded paths, the embedded resource list and
+version consistency. Any failure aborts the build.
 
-### mihomo.exe must be supplied
+`src\drivers\mihomo.exe` (about 61 MB) is not committed. Download `mihomo-windows-amd64-vX.Y.Z.zip` from upstream,
+extract `mihomo.exe` into `src\drivers\`, and write `mihomo.VERSION.txt` such as `Mihomo Meta v1.19.32 windows amd64`
+(the updater compares against it). winws.exe, cygwin1.dll and both WinDivert files are included.
 
-`src\drivers\mihomo.exe` is about 61 MB and is not committed. Before building, download
-`mihomo-windows-amd64-vX.Y.Z.zip` from upstream, extract `mihomo.exe` into `src\drivers\`, and write
-`mihomo.VERSION.txt` (the updater compares against it), for example `Mihomo Meta v1.19.32 windows amd64`.
+## Acknowledgements
 
-winws.exe, cygwin1.dll and both WinDivert files are included in the repository.
+This project depends on the work of:
 
-### Build problems you may hit
+* [mihomo (Clash.Meta)](https://github.com/MetaCubeX/mihomo) — proxy kernel
+* [zapret](https://github.com/bol-van/zapret) / [zapret-win-bundle](https://github.com/bol-van/zapret-win-bundle) — DPI desync
+* [WinDivert](https://github.com/basil00/WinDivert) — packet interception driver
+* [Cygwin](https://cygwin.com/) — POSIX layer used by winws
+* [WPF-UI](https://github.com/lepoco/wpfui) — Fluent controls
+* [MicaSetup](https://github.com/LemonPrefect/MicaSetup) — installer skeleton
+* [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev) — interaction reference for the node list
 
-`error CS1566: failed to read resource WinDivert64.sys` means the file is locked by a running winws.
-Stop it, or delete `obj` and `bin` and rebuild.
+Third-party licensing details, including LGPL obligations for WinDivert and cygwin1.dll, are in [NOTICE.md](NOTICE.md).
 
-If `verify.ps1` reports a missing BOM, run `tools\fix-bom.ps1` once.
+## License
 
-An installer of only two or three megabytes means the mica packaging step did not embed the payload.
-The usual cause is a version string with a suffix (`0.0.1-beta`): makemica accepts numeric versions only.
-The build script strips the suffix automatically, so be careful when invoking it by hand.
+Project code is MIT — see [LICENSE](LICENSE). Bundled kernel binaries keep their upstream licenses.
 
-## Known issues
+## Feedback
 
-ICMP cannot be proxied, so per-node testing relies on TCP handshakes and targets that answer only ICMP cannot be measured.
-
-GitHub's anonymous API allows 60 requests per hour; repeated launches may hit the limit, mitigated by the six-hour cache.
-
-mihomo binds ports 7891 and 9097. If another instance is already running, the ports conflict and the symptom is
-a successful subscription import followed by an empty node list.
-
-Windows x64 only, due to WinDivert and WPF.
-
-## License and third-party components
-
-Project code is MIT, see `LICENSE`. Kernel binaries shipped with the repository are not MIT; each follows its
-upstream license, detailed in `NOTICE.md`. WinDivert is dual-licensed LGPL-3.0 or GPL-2.0, cygwin1.dll is LGPL-3.0
-with a linking exception; both are distributed as separate files, without static linking or modification.
-
-Main dependencies:
-
-- mihomo (Clash.Meta) — https://github.com/MetaCubeX/mihomo
-- zapret / zapret-win-bundle — https://github.com/bol-van/zapret
-- WinDivert — https://github.com/basil00/WinDivert
-- Cygwin — https://cygwin.com/
-- .NET and WPF — https://github.com/dotnet/wpf
-- WPF-UI — https://github.com/lepoco/wpfui
+Open an [issue](https://github.com/AndySmithmao/netkit-l9x2/issues) for bugs or suggestions.
+Please include the version, the page you were on, and the relevant lines from `data\logs\session-*.log`.
 
 ## Disclaimer
 
-This project is a general-purpose network diagnostic and routing tool. It is not designed for, or directed at,
-any particular country, region or network operator.
+This project is a general-purpose network diagnostic and routing tool. It is not designed for, or directed at, any
+particular country, region or network operator.
 
-The software modifies the system hosts file, loads a kernel driver and may enable TUN, which redirects machine-wide
-traffic. Evaluate the risks yourself before running it.
+You are responsible for complying with the laws and regulations applicable in your jurisdiction, and with the terms of
+service of your network operator, VPN or proxy provider. Do not use this tool to circumvent rules you are bound by.
 
-You are responsible for complying with the laws and regulations applicable in your jurisdiction, and with the terms
-of service of your network operator, VPN or proxy provider. Do not use this tool to circumvent rules you are bound by.
-
-The authors provide the software as is, without warranty of any kind, and accept no liability for any damage,
-service interruption, account action or other loss arising from its use.
+The software is provided as is, without warranty of any kind. The authors accept no liability for any damage, service
+interruption, account action or other loss arising from its use.
