@@ -390,8 +390,16 @@ namespace VrcTool
             MihomoConfig.Subscription = url;
 
             string dir = System.IO.Path.Combine(DriverManager.RootDir, "mihomo");
-            string err;
-            bool got = MihomoConfig.DownloadSubscription(dir, out err);
+            // 下载是同步实现（内部 HttpClient 阻塞等待，最长 40 秒），
+            // 直接在按钮回调里调用会把界面冻住；放到线程池执行，界面保持响应。
+            string err = "";
+            bool got = await Task.Run(() =>
+            {
+                string e2;
+                bool g = MihomoConfig.DownloadSubscription(dir, out e2);
+                err = e2;
+                return g;
+            });
             if (!got)
             {
                 Ui.Warn("订阅下载失败：\r\n\r\n" + err, "订阅失败");

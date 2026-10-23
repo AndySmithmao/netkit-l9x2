@@ -22,7 +22,7 @@ namespace VrcTool
         {
             baseUrl = "http://127.0.0.1:" + MihomoConfig.ApiPort;
             secret = MihomoConfig.Secret;
-            http = new HttpClient();
+            http = Http.Create(15, "VRChat-Selector/1.0");
             http.Timeout = TimeSpan.FromSeconds(20);
             try { http.DefaultRequestHeaders.Add("Authorization", "Bearer " + secret); } catch { }
         }

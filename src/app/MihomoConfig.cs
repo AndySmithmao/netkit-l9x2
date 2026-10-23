@@ -100,6 +100,12 @@ namespace VrcTool
         /// 关键点：必须带 Clash 系 User-Agent —— 订阅站按 UA 决定返回格式，
         /// 不带 UA 会拿到 base64 的 v2ray 链接（mihomo 解析不了，节点列表会是空的）。
         /// </summary>
+        /// <summary>
+        /// 下载订阅到 providers\sub.yaml。
+        ///
+        /// 订阅站按 User-Agent 决定返回格式：带 Clash 系 UA 才给 YAML，否则给 base64 的 v2ray 链接。
+        /// 所以轮流试几个常见 UA，先拿到 YAML 的算成功。校验必须看全文 —— proxies: 常在 1 KB 之后。
+        /// </summary>
         public static bool DownloadSubscription(string dir, out string error)
         {
             error = "";
@@ -117,10 +123,6 @@ namespace VrcTool
                 Directory.CreateDirectory(pdir);
                 string target = Path.Combine(pdir, "sub.yaml");
 
-                // 订阅站是按 User-Agent 决定返回格式的：
-                //   带 Clash 系 UA -> 返回 Clash YAML
-                //   其它/无 UA     -> 返回 base64 的 v2ray 链接（mihomo 读不了）
-                // 所以这里轮流试几个常见 UA，谁先拿到 YAML 就用谁。
                 string[] uas = new string[]
                 {
                     "clash-verge/v2.0.0",
@@ -135,56 +137,43 @@ namespace VrcTool
                 {
                     try
                     {
-                        using (HttpClientHandler handler = new HttpClientHandler())
+                        // 共享连接池；UA 决定返回格式，所以每个 UA 建一个轻量客户端
+                        using (HttpClient hc = Http.Create(40, ua))
                         {
-                            // 有的节点会返回 gzip/br，不解压会看到乱码并误判成"非 Clash"
-                            try
+                            hc.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "text/yaml, text/plain, */*");
+
+                            byte[] data = hc.GetByteArrayAsync(url).GetAwaiter().GetResult();
+                            if (data == null || data.Length < 200)
                             {
-                                handler.AutomaticDecompression = System.Net.DecompressionMethods.GZip
-                                                                | System.Net.DecompressionMethods.Deflate;
+                                lastDetail = ua + " -> 内容过小（" + (data == null ? 0 : data.Length) + " 字节）";
+                                continue;
                             }
-                            catch { }
 
-                            using (HttpClient hc = new HttpClient(handler))
+                            string full = Encoding.UTF8.GetString(data).TrimStart('\uFEFF', ' ', '\r', '\n', '\t');
+                            string firstLine = full;
+                            int nl = full.IndexOf('\n');
+                            if (nl > 0) firstLine = full.Substring(0, nl).Trim();
+
+                            bool looksClash = full.IndexOf("proxies:", StringComparison.Ordinal) >= 0
+                                           || full.IndexOf("proxy-groups:", StringComparison.Ordinal) >= 0
+                                           || full.IndexOf("proxy-providers:", StringComparison.Ordinal) >= 0
+                                           || firstLine.StartsWith("mixed-port:", StringComparison.OrdinalIgnoreCase)
+                                           || firstLine.StartsWith("port:", StringComparison.OrdinalIgnoreCase)
+                                           || firstLine.StartsWith("proxies:", StringComparison.OrdinalIgnoreCase);
+                            if (looksClash)
                             {
-                                hc.Timeout = TimeSpan.FromSeconds(40);
-                                hc.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", ua);
-                                hc.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "text/yaml, text/plain, */*");
-
-                                byte[] data = hc.GetByteArrayAsync(url).Result;
-                                if (data == null || data.Length < 200)
-                                {
-                                    lastDetail = ua + " -> 内容过小（" + (data == null ? 0 : data.Length) + " 字节）";
-                                    continue;
-                                }
-
-                                // 注意：必须看全文，不能只看开头 —— Clash 订阅的 YAML 前几百字节
-                                // 是 mixed-port / allow-lan / mode / dns 之类的配置，
-                                // proxies: 往往在一千字节以后。只看开头会误判成"不是 Clash 格式"。
-                                string full = Encoding.UTF8.GetString(data).TrimStart('\uFEFF', ' ', '\r', '\n', '\t');
-                                string firstLine = full;
-                                int nl = full.IndexOf('\n');
-                                if (nl > 0) firstLine = full.Substring(0, nl).Trim();
-                                bool looksClash = full.IndexOf("proxies:", StringComparison.Ordinal) >= 0
-                                               || full.IndexOf("proxy-groups:", StringComparison.Ordinal) >= 0
-                                               || full.IndexOf("proxy-providers:", StringComparison.Ordinal) >= 0
-                                               || firstLine.StartsWith("mixed-port:", StringComparison.OrdinalIgnoreCase)
-                                               || firstLine.StartsWith("port:", StringComparison.OrdinalIgnoreCase)
-                                               || firstLine.StartsWith("proxies:", StringComparison.OrdinalIgnoreCase);
-                                if (looksClash)
-                                {
-                                    File.WriteAllBytes(target, data);
-                                    DriverManager.Log("订阅已下载: " + data.Length + " 字节（UA=" + ua + "）-> " + target);
-                                    return true;
-                                }
-
-                                lastDetail = ua + " -> 不是 Clash 格式（首行：" + SafeHead(firstLine) + "，共 " + data.Length + " 字节）";
+                                File.WriteAllBytes(target, data);
+                                DriverManager.Log("订阅已下载: " + data.Length + " 字节（UA=" + ua + "）-> " + target);
+                                return true;
                             }
+
+                            lastDetail = ua + " -> 不是 Clash 格式（首行：" + SafeHead(firstLine) + "，共 " + data.Length + " 字节）";
                         }
                     }
                     catch (Exception ex)
                     {
                         lastDetail = ua + " -> " + ex.Message;
+                        DriverManager.Log("订阅下载尝试失败: " + lastDetail);
                     }
                 }
 

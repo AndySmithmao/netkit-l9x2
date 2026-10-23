@@ -75,6 +75,67 @@ namespace VrcTool
             catch { }
         }
 
+        /// <summary>
+        /// 把 GitHub Release 的完整 JSON 压成只含必要字段的形状。
+        ///
+        /// 为什么需要：完整 JSON 里有更新说明正文（release body）、上传者、digest 等，
+        /// 实测三万字的说明会让缓存文件涨到 300 KB 以上。这里只保留版本号与资产列表，
+        /// 两个解析方（应用更新 / 内核更新）都只读这些字段。
+        /// </summary>
+        public static string CompactRelease(string body)
+        {
+            try
+            {
+                using (JsonDocument doc = JsonDocument.Parse(body))
+                {
+                    JsonElement root = doc.RootElement;
+                    string tag = "";
+                    JsonElement v;
+                    if (root.TryGetProperty("tag_name", out v) && v.ValueKind == JsonValueKind.String) tag = v.GetString();
+
+                    List<object> assets = new List<object>();
+                    JsonElement arr;
+                    if (root.TryGetProperty("assets", out arr) && arr.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (JsonElement a in arr.EnumerateArray())
+                        {
+                            assets.Add(new
+                            {
+                                name = Str(a, "name"),
+                                browser_download_url = Str(a, "browser_download_url"),
+                                url = Str(a, "url"),
+                                size = Num(a, "size")
+                            });
+                        }
+                    }
+
+                    return JsonSerializer.Serialize(new { tag_name = tag, assets });
+                }
+            }
+            catch { return body; }   // 压不动就原样存，功能不受影响
+        }
+
+        private static string Str(JsonElement e, string name)
+        {
+            try
+            {
+                JsonElement v;
+                if (e.TryGetProperty(name, out v) && v.ValueKind == JsonValueKind.String) return v.GetString();
+            }
+            catch { }
+            return "";
+        }
+
+        private static long Num(JsonElement e, string name)
+        {
+            try
+            {
+                JsonElement v;
+                if (e.TryGetProperty(name, out v) && v.ValueKind == JsonValueKind.Number) return v.GetInt64();
+            }
+            catch { }
+            return 0;
+        }
         /// <summary>手动检查时清掉缓存。</summary>
         public static void Clear()
         {

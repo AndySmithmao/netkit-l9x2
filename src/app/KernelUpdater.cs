@@ -46,9 +46,7 @@ namespace VrcTool
 
         private static HttpClient NewApiClient()
         {
-            HttpClient c = new HttpClient();
-            c.Timeout = TimeSpan.FromSeconds(25);
-            c.DefaultRequestHeaders.UserAgent.ParseAdd("VRChat-Selector-Updater/1.0");
+            HttpClient c = Http.Create(25, "VRChat-Selector-Updater/1.0");
             c.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
             return c;
         }
@@ -102,7 +100,7 @@ namespace VrcTool
                         target.Error = FriendlyHttp((int)r.StatusCode);
                         return null;
                     }
-                    UpdateCache.Put(cacheKey, body);
+                    UpdateCache.Put(cacheKey, UpdateCache.CompactRelease(body));
                     return body;
                 }
             }
@@ -173,10 +171,8 @@ namespace VrcTool
                 string full = mirror.Length == 0 ? url : mirror + url;
                 try
                 {
-                    using (HttpClient c = new HttpClient())
+                    using (HttpClient c = Http.Create(mirror.Length == 0 ? 12 : 120, "VRChat-Selector-Updater/1.0"))
                     {
-                        c.Timeout = TimeSpan.FromSeconds(mirror.Length == 0 ? 12 : 120);
-                        c.DefaultRequestHeaders.UserAgent.ParseAdd("VRChat-Selector-Updater/1.0");
                         using (HttpResponseMessage r = await c.GetAsync(full, HttpCompletionOption.ResponseHeadersRead, ct))
                         {
                             if (!r.IsSuccessStatusCode)

@@ -93,7 +93,9 @@ namespace VrcTool
             if (root == null) return;
             try
             {
-                Walk(root, 0);
+                // 一次遍历里记住访问过的节点：可视树与逻辑树有重叠，不去重会重复处理
+                HashSet<object> seen = new HashSet<object>();
+                Walk(root, 0, seen);
             }
             catch (Exception ex)
             {
@@ -101,9 +103,10 @@ namespace VrcTool
             }
         }
 
-        private static void Walk(DependencyObject node, int depth)
+        private static void Walk(DependencyObject node, int depth, HashSet<object> seen)
         {
             if (node == null || depth > 60) return;
+            if (seen != null && !seen.Add(node)) return;
 
             // 逐类型取文字
             TextBlock tb = node as TextBlock;
@@ -154,14 +157,14 @@ namespace VrcTool
             {
                 DependencyObject child = null;
                 try { child = VisualTreeHelper.GetChild(node, i); } catch { }
-                if (child != null) Walk(child, depth + 1);
+                if (child != null) Walk(child, depth + 1, seen);
             }
 
             // 逻辑树里可能还有未实体化的项（例如未展开的 ComboBox、折叠的卡片）
             foreach (object child in LogicalTreeHelper.GetChildren(node))
             {
                 DependencyObject dep = child as DependencyObject;
-                if (dep != null && !ReferenceEquals(dep, node)) Walk(dep, depth + 1);
+                if (dep != null && !ReferenceEquals(dep, node)) Walk(dep, depth + 1, seen);
             }
         }
 

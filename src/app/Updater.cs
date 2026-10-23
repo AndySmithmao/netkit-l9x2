@@ -71,9 +71,7 @@ namespace VrcTool
 
         private static HttpClient NewClient()
         {
-            HttpClient c = new HttpClient();
-            c.Timeout = TimeSpan.FromSeconds(25);
-            c.DefaultRequestHeaders.UserAgent.ParseAdd("VRChat-Selector-Updater/1.0");
+            HttpClient c = Http.Create(25, "VRChat-Selector-Updater/1.0");
             c.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
             return c;
         }
@@ -99,7 +97,7 @@ namespace VrcTool
                             info.Error = FriendlyHttp((int)r.StatusCode, body);
                             return info;
                         }
-                        UpdateCache.Put("app", body);
+                        UpdateCache.Put("app", UpdateCache.CompactRelease(body));
                     }
                 }
 

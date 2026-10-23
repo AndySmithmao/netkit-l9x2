@@ -12,7 +12,7 @@
 # =============================================================================
 [CmdletBinding()]
 param(
-    [string]$Version    = '0.0.2-beta',
+    [string]$Version    = '0.0.3-beta',
     # 决定默认安装目录 C:\Program Files\<InstallFolder>
     [string]$InstallFolder = 'VRChat优选工具',
     [string]$Publisher  = 'VRChat-Tool',

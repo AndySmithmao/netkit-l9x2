@@ -952,6 +952,10 @@ namespace VrcTool
 
             if (isSettings) RefreshSettingsUi();
             if (isSub || isNodes || isTrace || isDrivers) RefreshKernelUi();
+
+            // 页面卡片是 Collapsed 的，启动时不在可视树里，语言没被应用过。
+            // 每次切页都补一次，保证非中文界面下各页文字一致。
+            if (Localization.Current != UiLang.ChineseSimplified) ApplyLanguage();
         }
 
         // ====================================================================

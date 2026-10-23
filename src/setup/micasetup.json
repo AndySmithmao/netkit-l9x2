@@ -6,7 +6,7 @@
     "KeyName":  "VRChatTool",
     "ExeName":  "VRChat优选工具.exe",
     "Publisher":  "VRChat-Tool",
-    "Version":  "0.0.2",
+    "Version":  "0.0.3",
     "TargetFramework":  "net472",
     "Guid":  "7C4A2E19-8B3D-4F62-9A51-3E0D6C2B7F84",
     "Favicon":  "Favicon.png",

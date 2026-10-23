@@ -220,9 +220,10 @@ namespace VrcTool
                     startedAt[kind] = DateTime.Now;
                     lastErrors[kind] = "";
 
-                    // 用 3 秒确认它没秒退（winws 撞 FWP / mihomo 配置错都会立刻退出）
-                    Thread.Sleep(1200);
-                    if (p.HasExited)
+                    // 确认它没秒退（winws 撞 FWP / mihomo 配置错都会立刻退出）。
+                    // 用 WaitForExit 而不是 Sleep：进程 100 ms 就死的话，这里也 100 ms 返回。
+                    bool exitedEarly = p.WaitForExit(1200);
+                    if (exitedEarly)
                     {
                         int code = -1;
                         try { code = p.ExitCode; } catch { }
@@ -260,7 +261,6 @@ namespace VrcTool
         public static bool Stop(DriverKind kind, bool graceful, out string message)
         {
             lock (gate)
-                intentionalStops.Add(kind);
             {
                 Process p;
                 if (!procs.TryGetValue(kind, out p) || p == null || p.HasExited)
@@ -270,6 +270,10 @@ namespace VrcTool
                     message = "本来就没在运行";
                     return true;
                 }
+
+                // 只有真的要停一个活着的进程时才标记"用户主动停止"，
+                // 否则标记会残留，把下一次真正的崩溃误报成正常退出。
+                intentionalStops.Add(kind);
 
                 try
                 {
@@ -293,6 +297,8 @@ namespace VrcTool
                     bool gone = p.HasExited;
                     procs.Remove(kind);
                     startedAt.Remove(kind);
+                    // Process 对象持有系统句柄，不释放的话每次开关都漏一个
+                    try { p.Dispose(); } catch { }
                     Log("停止 " + kind + " pid=" + pid + " -> " + (gone ? "已退出" : "仍在运行"));
                     message = gone ? "已停止" : "停止超时（进程可能仍在）";
                     return gone;
@@ -302,6 +308,11 @@ namespace VrcTool
                     Log("停止 " + kind + " 异常: " + ex.Message);
                     message = "停止失败：" + ex.Message;
                     return false;
+                }
+                finally
+                {
+                    // 兜底：万一 Exited 回调没跑到，别让标记一直留着
+                    if (!procs.ContainsKey(kind)) intentionalStops.Remove(kind);
                 }
             }
         }
