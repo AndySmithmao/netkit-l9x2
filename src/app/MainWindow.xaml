@@ -251,7 +251,7 @@
                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <CheckBox x:Name="CkRememberWindow" Content="记住窗口大小和位置"
                           Margin="0,8,0,0" Click="CkRememberWindow_Click" />
-                <CheckBox x:Name="CkTray" Content="最小化时缩到托盘"
+                <CheckBox x:Name="CkTray" Content="关闭窗口时缩到托盘"
                           Margin="0,6,0,0" Click="CkTray_Click" />
 
                 <Border Height="1" Margin="0,12,0,10"
@@ -274,6 +274,21 @@
               </StackPanel>
 
               <StackPanel Grid.Column="1">
+                <Border Height="1" Margin="0,12,0,10"
+                        Background="{DynamicResource CardStrokeColorDefaultBrush}" />
+
+                <ui:TextBlock FontTypography="BodyStrong" Text="所在区域"
+                              Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <ui:TextBlock x:Name="TxtRegion" Margin="0,6,0,0" FontTypography="Caption" TextWrapping="Wrap"
+                              Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="未选择" />
+                <ui:Button x:Name="BtnChangeRegion" Content="更改区域" Height="30" Margin="0,8,0,0"
+                           HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                           Click="BtnChangeRegion_Click" />
+                <ui:Button x:Name="BtnGeoRefresh" Content="重新查询 IP 归属" Height="30" Margin="0,6,0,0"
+                           HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                           Click="BtnGeoRefresh_Click" />
+                <ui:TextBlock x:Name="TxtGeoStatus" Margin="0,6,0,0" FontTypography="Caption" TextWrapping="Wrap"
+                              Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="" />
                 <ui:TextBlock FontTypography="BodyStrong" Text="数据与排障"
                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <ui:Button x:Name="BtnDiag" Content="导出诊断包" Appearance="Primary"

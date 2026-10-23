@@ -288,6 +288,8 @@ else {
         $embInfo += "csproj 用 `$(ScriptsDir) 属性 → 解析为 $scriptsDirVal"
     }
 
+    # 只校验脚本资源；数据类资源（geoip.bin 等由 tools\build-geoip.ps1 生成）不参与清单比对
+    $dataResources = @('geoip.bin')
     $patterns = @()
     foreach ($m in [regex]::Matches($csprojText, '<EmbeddedResource\s+Include\s*=\s*"([^"]+)"')) {
         $v = $m.Groups[1].Value
@@ -300,7 +302,7 @@ else {
     }
     # 内置内核（drivers\*）不是脚本，本组只校验脚本清单 —— 先把它们剔掉，
     # 否则会按"脚本数量"去比对，永远对不上。
-    $patterns = @($patterns | Where-Object { $_ -notmatch 'DriversDir|\\drivers\\|^drivers\\' })
+    $patterns = @($patterns | Where-Object { $_ -notmatch 'DriversDir|\\drivers\\|^drivers\\|geoip\.bin' })
     $patterns = @($patterns | ForEach-Object { $_.Replace('$(ScriptsDir)', $scriptsDirVal) } |
                   Where-Object { $_ } | Sort-Object -Unique)
 

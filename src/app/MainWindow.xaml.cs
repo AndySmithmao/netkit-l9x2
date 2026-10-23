@@ -64,6 +64,7 @@ namespace VrcTool
         private int ctxSeq = 0;
 
         private TrayIcon tray;
+        private bool forceShutdown;
         private bool autoScroll = true;
         // 日志是否「贴着底部」。
         // 只有贴底时才自动跟着滚；用户往上翻之后就不动，让他安心看历史。
@@ -223,6 +224,8 @@ namespace VrcTool
                 LayoutDrawers();
                 // 语言要在布局完成、文字实体化之后应用
                 ApplyLanguage();
+                // 首次进入：询问所在区域（只问一次，之后可在设置页改）
+                try { EnsureRegionChosen(); } catch { }
 
                 // 程序目录被搬过的话，服务里的绝对路径就失效了，自检并修回来
                 CheckServicePath();
@@ -287,19 +290,28 @@ namespace VrcTool
                 }
             };
 
-            // 最小化 → 缩到托盘（设置页可以关）
+            // 最小化 = 正常最小化（留在任务栏）。
+            // 之前是"最小化即缩托盘"，用户点最小化后找不到窗口；托盘改为只响应关闭按钮。
             StateChanged += delegate
             {
                 try
                 {
-                    if (WindowState == WindowState.Minimized && UiState.Current.MinimizeToTray && tray != null)
-                        HideToTray();
+                    if (WindowState != WindowState.Minimized) return;
+                    // 交给系统标准行为，不做任何隐藏
                 }
                 catch (Exception __ex) { Swallowed(__ex); }
             };
 
             Closing += delegate(object s, CancelEventArgs e)
             {
+                // 点关闭：若开了"关闭时缩到托盘"，藏起来而不是退出
+                if (!forceShutdown && UiState.Current.MinimizeToTray && tray != null)
+                {
+                    e.Cancel = true;
+                    HideToTray();
+                    return;
+                }
+
                 if (ctx != null && ctx.P != null && !ctx.P.HasExited)
                 {
                     if (!Ui.Question("任务还在运行，确定要退出吗？", "还没跑完"))
@@ -768,6 +780,8 @@ namespace VrcTool
                 LayoutDrawers();
                 // 语言要在布局完成、文字实体化之后应用
                 ApplyLanguage();
+                // 首次进入：询问所在区域（只问一次，之后可在设置页改）
+                try { EnsureRegionChosen(); } catch { }
             }
             catch (Exception __ex) { Swallowed(__ex); }
         }
@@ -950,7 +964,7 @@ namespace VrcTool
             CardTrace.Visibility = isTrace ? Visibility.Visible : Visibility.Collapsed;
             CardDrivers.Visibility = isDrivers ? Visibility.Visible : Visibility.Collapsed;
 
-            if (isSettings) RefreshSettingsUi();
+            if (isSettings) { RefreshSettingsUi(); RefreshRegionText(); }
             if (isSub || isNodes || isTrace || isDrivers) RefreshKernelUi();
 
             // 页面卡片是 Collapsed 的，启动时不在可视树里，语言没被应用过。
@@ -1086,14 +1100,43 @@ namespace VrcTool
 
             ResetProgress(title);
             Append("");
-            Append("▶ " + title + "    (" + scriptFile + " " + extraArgs + ")");
+
+            
+// 按「所在区域」收窄扫描范围：只给 full-scan 传白名单；
+            
+// 一键完成里由 all-in-one 通过环境变量把同一份文件透传给 full-scan。
+            
+string scanArgs = extraArgs;
+            
+try
+            
+{
+            
+    string prefixFile = PrepareRegionFilterFile();
+            
+    if (!string.IsNullOrEmpty(prefixFile))
+            
+    {
+            
+        Environment.SetEnvironmentVariable("VRCTOOL_PREFIX_FILE", prefixFile);
+            
+        if (string.Equals(scriptFile, "full-scan.ps1", StringComparison.OrdinalIgnoreCase))
+            
+            scanArgs = (scanArgs + " -PrefixFile \"" + prefixFile + "\"").Trim();
+            
+    }
+            
+}
+            
+catch (Exception __ex) { DriverManager.Log("区域过滤准备失败: " + __ex.Message); }
+            Append("▶ " + title + "    (" + scriptFile + " " + scanArgs + ")");
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("$ErrorActionPreference='Continue'");
             sb.AppendLine("[Console]::OutputEncoding=[Text.Encoding]::UTF8");
             sb.AppendLine("$OutputEncoding=[Text.Encoding]::UTF8");
             ScriptHost.AppendEnvSetup(sb);          // 把 根目录/工具目录/数据目录 传给脚本
-            sb.AppendLine("& '" + sp.Replace("'", "''") + "' " + extraArgs);
+            sb.AppendLine("& '" + sp.Replace("'", "''") + "' " + scanArgs);
             // 退出码：约定只有 0/1/2 三种（脚本末尾必须显式 exit）。
             // 拿不到（$null）或超出范围（例如最后一条 curl 的 28、sc 的 6）说明脚本没显式退出，
             // 不能把它当任务结果 —— 否则"成功却显示退出码 28"。
@@ -2066,7 +2109,7 @@ namespace VrcTool
             {
                 UiState.Current.MinimizeToTray = (CkTray.IsChecked == true);
                 UiState.Touch();
-                Append("[设置] 最小化时缩到托盘：" + (CkTray.IsChecked == true ? "开" : "关"));
+                Append("[设置] 关闭时缩到托盘：" + (CkTray.IsChecked == true ? "开" : "关"));
             }
             catch (Exception __ex) { Swallowed(__ex); }
         }
@@ -2115,6 +2158,7 @@ namespace VrcTool
             try
             {
                 if (ctx != null && ctx.P != null && !ctx.P.HasExited) ShowFromTray();
+                forceShutdown = true;     // 明确退出，不被"关闭缩托盘"拦住
                 Close();
             }
             catch (Exception __ex) { Swallowed(__ex); }

@@ -27,6 +27,12 @@ namespace VrcTool
         /// <summary>界面语言代码（zh-CN / en / ja / ko / ru / es）</summary>
         public string Language { get; set; } = "zh-CN";
 
+        /// <summary>首次进入时选择的区域（大陆板块）。空 = 还没选过。 </summary>
+        public string RegionContinent { get; set; } = "";
+
+        /// <summary>区域对应的国家码（如 CN / JP）。 </summary>
+        public string RegionCountry { get; set; } = "";
+
         public bool Maximized { get; set; }
 
         public bool HelpCardVisible { get; set; } = true;

@@ -41,6 +41,10 @@ Current version `0.0.2-beta`. Features and UI may still change.
 * **Ping** — for a given IP or host, measure real round-trip through every node via TCP + TLS handshake, sorted ascending
 * **updates** — startup check for app and both kernels, asks before updating; kernel updates back up and roll back on failure
 * **localization** — 简体中文 / English / 日本語 / 한국어 / Русский / Español, switchable in settings
+* **region-aware scanning** — first launch asks for continent and country; the full scan then only probes prefixes in that
+  region, which cuts the candidate set from ~22k /24s to a few hundred. The bundled IP-geo database (DB-IP Lite, ~362k
+  ranges) ships inside the installer, and can be refreshed from the app at any time
+* **normal minimize** — minimizing keeps the window in the taskbar; the tray icon is used when closing the window
 * **tray and autostart** — minimize to tray; kernels only start with the app if you explicitly enable it
 
 ## Download

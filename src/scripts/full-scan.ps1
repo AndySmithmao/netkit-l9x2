@@ -36,8 +36,14 @@ param(
     [int]$Timeout = 2500,
     [ValidateRange(1, 1000)]
     [int]$TopN = 40,
-    [string]$OutDir = ''
+    [string]$OutDir = '',
+    # 可选：只测这些 /16 前缀（每行一个，如 104.16）。由 GUI 按「所在区域」生成，
+    # 用来把几万个网段收窄到同区域/邻近国家，显著缩短扫描时间。留空 = 全量。
+    [string]$PrefixFile = ''
 )
+
+# GUI 通过环境变量传白名单（「一键完成」走 all-in-one，无法直接加命令行参数）
+if (-not $PrefixFile -and $env:VRCTOOL_PREFIX_FILE) { $PrefixFile = $env:VRCTOOL_PREFIX_FILE }
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
@@ -249,6 +255,19 @@ function Shuffle-Array {
 }
 
 # 展开 CIDR，主机位随机化（不再是固定的 .1）
+# 区域过滤：只保留 PrefixFile 里列出的 /16（文件不存在或为空 = 不过滤）
+$script:__allow16 = $null
+if ($PrefixFile -and (Test-Path -LiteralPath $PrefixFile)) {
+    try {
+        $set = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
+        foreach ($ln in [IO.File]::ReadLines($PrefixFile)) {
+            $v = $ln.Trim()
+            if ($v -match '^\d+\.\d+$') { $null = $set.Add($v) }
+        }
+        if ($set.Count -gt 0) { $script:__allow16 = $set }
+    } catch { }
+}
+
 function Expand-Random {
     param([string[]]$Cidrs)
     $out = New-Object System.Collections.Generic.List[string]
@@ -260,6 +279,11 @@ function Expand-Random {
         $n = if ($pf -ge 24) { 1 } else { [int]([uint64][math]::Pow(2, 32 - $pf) / 256) }
         for ($i = 0; $i -lt $n; $i++) {
             $net = $base + [uint64]($i * 256)
+            # 区域过滤：命中白名单外的 /16 直接跳过（不展开、不探测）
+            if ($script:__allow16) {
+                $p16 = "$([int](($net -shr 24) -band 255)).$([int](($net -shr 16) -band 255))"
+                if (-not $script:__allow16.Contains($p16)) { continue }
+            }
             # /24 内随机选一个主机位（2..254，避开网络地址和广播地址）
             $host_ = $rng.Next(2, 255)
             $v = $net + [uint64]$host_
