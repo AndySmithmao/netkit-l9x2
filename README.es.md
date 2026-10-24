@@ -20,7 +20,7 @@ Herramienta de escritorio para Windows que mejora la calidad de red de VRChat. I
 winws (elusión de DPI de zapret) y mihomo (Clash.Meta), además de una vía de optimización de hosts que no
 requiere proxy. Está escrita en WPF sobre .NET 10 y necesita permisos de administrador para ejecutarse.
 
-Versión actual 0.0.1-beta; tanto las funciones como la interfaz pueden cambiar.
+Versión actual 0.0.4-beta; tanto las funciones como la interfaz pueden cambiar.
 
 ## Qué problema resuelve
 

@@ -21,7 +21,7 @@ WPF tool on .NET 10 for improving VRChat's network quality. It has two independe
 so VRChat domains resolve to well-performing IPs, or route matching traffic through a proxy kernel.
 Both can be used alone or together.
 
-Current version `0.0.2-beta`. Features and UI may still change.
+Current version `0.0.4-beta`. Features and UI may still change.
 
 ## Features
 

@@ -8,6 +8,8 @@ namespace VrcTool
     public partial class MainWindow
     {
         private bool regionPrompted;
+        /// <summary>区域弹窗是否正在显示：此时不能再弹更新框，否则两个模态会互相遮挡。</summary>
+        private bool regionDialogOpen;
 
         /// <summary>首次进入（没选过区域）时询问一次；之后由设置页手动修改。</summary>
         private void EnsureRegionChosen()
@@ -20,7 +22,10 @@ namespace VrcTool
 
                 RegionWindow w = new RegionWindow(Continent.Asia, "CN");
                 w.Owner = this;
-                bool? ok = w.ShowDialog();
+                regionDialogOpen = true;
+                bool? ok;
+                try { ok = w.ShowDialog(); }
+                finally { regionDialogOpen = false; }
                 if (ok == true)
                 {
                     UiState.Current.RegionContinent = w.SelectedContinent.ToString();
@@ -50,7 +55,11 @@ namespace VrcTool
 
                 RegionWindow w = new RegionWindow(cur, UiState.Current.RegionCountry);
                 w.Owner = this;
-                if (w.ShowDialog() == true)
+                regionDialogOpen = true;
+                bool? ok2;
+                try { ok2 = w.ShowDialog(); }
+                finally { regionDialogOpen = false; }
+                if (ok2 == true)
                 {
                     UiState.Current.RegionContinent = w.SelectedContinent.ToString();
                     UiState.Current.RegionCountry = w.SelectedCountry;

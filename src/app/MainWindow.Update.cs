@@ -39,6 +39,13 @@ namespace VrcTool
             {
                 await Task.Delay(5000);
 
+                // 区域选择还没做完时不要弹更新框：两个模态会互相遮挡，点谁都不对
+                if (regionDialogOpen)
+                {
+                    Append("[更新] 跳过本次检查（正在选择所在区域）");
+                    return;
+                }
+
                 Append("[更新] 检查应用与内核版本…");
                 List<KernelUpdate> kernels = await KernelUpdater.CheckAsync(CancellationToken.None);
                 UpdateInfo app = await Updater.CheckAsync(CancellationToken.None);
