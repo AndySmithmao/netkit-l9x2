@@ -120,18 +120,35 @@ namespace VrcTool
                 JsonElement assets;
                 if (!root.TryGetProperty("assets", out assets) || assets.ValueKind != JsonValueKind.Array) return;
 
+                // 上游资产有好几种形态：
+                //   mihomo-windows-amd64-v1.19.33.zip           基础版 —— 要的就是它
+                //   mihomo-windows-amd64-v1-v1.19.33.zip        GOAMD64 微架构等级 v1/v2/v3 变体
+                //   mihomo-windows-amd64-v3-go123-v1.19.33.zip  指定 Go 版本
+                //   mihomo-windows-amd64-compatible-v1.19.33.zip 老 CPU 兼容版
+                // 之前只排除 -compatible- 和 -v1-go，结果选中了 -v1- 变体。
+                Regex plainRx = new Regex(@"^mihomo-windows-amd64-v\d+(\.\d+)+\.zip$", RegexOptions.IgnoreCase);
+
+                string fallback = "";
                 foreach (JsonElement a in assets.EnumerateArray())
                 {
                     string n = GetStr(a, "name");
+                    string u = GetStr(a, "browser_download_url");
+                    if (u.Length == 0) continue;
                     if (!n.StartsWith("mihomo-windows-amd64", StringComparison.OrdinalIgnoreCase)) continue;
-                    bool plain = !n.Contains("-compatible-") && !n.Contains("-v1-go") && !n.Contains("-v2") && !n.Contains("-v3");
-                    if (plain || m.AssetUrl.Length == 0)
+
+                    if (plainRx.IsMatch(n))
                     {
                         m.AssetName = n;
-                        m.AssetUrl = GetStr(a, "browser_download_url");
-                        if (plain) break;
+                        m.AssetUrl = u;
+                        return;
+                    }
+                    if (fallback.Length == 0 && n.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                    {
+                        fallback = u;
+                        if (m.AssetName.Length == 0) m.AssetName = n;
                     }
                 }
+                if (m.AssetUrl.Length == 0) m.AssetUrl = fallback;   // 没有标准包就退回第一个 zip
             }
         }
 
@@ -171,7 +188,7 @@ namespace VrcTool
                 string full = mirror.Length == 0 ? url : mirror + url;
                 try
                 {
-                    using (HttpClient c = Http.Create(mirror.Length == 0 ? 12 : 120, "VRChat-Selector-Updater/1.0"))
+                    using (HttpClient c = Http.Create(0, "VRChat-Selector-Updater/1.0"))   // 不设总超时：内核包很大，走 CancellationToken
                     {
                         using (HttpResponseMessage r = await c.GetAsync(full, HttpCompletionOption.ResponseHeadersRead, ct))
                         {
@@ -189,6 +206,25 @@ namespace VrcTool
                     }
                     if (new FileInfo(dest).Length > 100 * 1024)
                     {
+                        // 镜像会静默截断（实测 ghproxy 下到 20 MB，实际 22.5 MB），
+                        // 截断的 zip 打开时报「找不到中央目录结尾记录」。先试开一次，
+                        // 不完整就换下一个源，别把坏包交给解压逻辑。
+                        if (dest.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                        {
+                            try
+                            {
+                                using (ZipArchive check = ZipFile.OpenRead(dest))
+                                {
+                                    if (check.Entries.Count == 0) throw new InvalidDataException("空压缩包");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                lastErr = (mirror.Length == 0 ? "直连" : mirror) + " 下载不完整: " + ex.Message;
+                                DriverManager.Log("下载不完整，换源: " + lastErr);
+                                continue;
+                            }
+                        }
                         DriverManager.Log("下载成功（源: " + (mirror.Length == 0 ? "github 直连" : mirror) + "）: " + dest);
                         return "";
                     }
@@ -221,9 +257,24 @@ namespace VrcTool
                 using (ZipArchive z = ZipFile.OpenRead(zip))
                 {
                     ZipArchiveEntry hit = null;
+                    // 上游包里的文件名是 mihomo-windows-amd64.exe，不是 mihomo.exe。
+                    // 按「mihomo 开头 + .exe 结尾」匹配，改名也不会崩。
                     foreach (ZipArchiveEntry e in z.Entries)
-                        if (e.Name.Equals("mihomo.exe", StringComparison.OrdinalIgnoreCase) && hit == null) hit = e;
-                    if (hit == null) return "压缩包里没有 mihomo.exe";
+                    {
+                        string nm = e.Name;
+                        if (nm.StartsWith("mihomo", StringComparison.OrdinalIgnoreCase)
+                            && nm.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                        {
+                            hit = e;
+                            break;
+                        }
+                    }
+                    if (hit == null)
+                    {
+                        StringBuilder names = new StringBuilder();
+                        foreach (ZipArchiveEntry e in z.Entries) names.Append(e.Name).Append(' ');
+                        return "压缩包里没有 mihomo 可执行文件（包内: " + names.ToString().Trim() + "）";
+                    }
                     if (File.Exists(tmpExe)) File.Delete(tmpExe);
                     hit.ExtractToFile(tmpExe, true);
                 }

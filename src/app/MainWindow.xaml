@@ -271,9 +271,6 @@
                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                               TextWrapping="Wrap"
                               Text="字体和窗口一起缩放。系统缩放调得高（125%/150%）时选小一档，窗口和字都会跟着变小。" />
-              </StackPanel>
-
-              <StackPanel Grid.Column="1">
                 <Border Height="1" Margin="0,12,0,10"
                         Background="{DynamicResource CardStrokeColorDefaultBrush}" />
 
@@ -289,6 +286,20 @@
                            Click="BtnGeoRefresh_Click" />
                 <ui:TextBlock x:Name="TxtGeoStatus" Margin="0,6,0,0" FontTypography="Caption" TextWrapping="Wrap"
                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="" />
+
+                <Border Height="1" Margin="0,12,0,10"
+                        Background="{DynamicResource CardStrokeColorDefaultBrush}" />
+
+                <ui:TextBlock FontTypography="BodyStrong" Text="应用更新"
+                              Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <ui:Button x:Name="BtnCheckUpdate" Content="检查更新" Height="32" Margin="0,8,0,0"
+                           HorizontalAlignment="Left" Width="130" Click="BtnCheckUpdate_Click"
+                           Icon="{ui:SymbolIcon ArrowSync24}" />
+                <ui:TextBlock x:Name="TxtUpdateStatus" Margin="0,6,0,0" FontTypography="Caption" TextWrapping="Wrap"
+                              Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="" />
+              </StackPanel>
+
+              <StackPanel Grid.Column="1">
                 <ui:TextBlock FontTypography="BodyStrong" Text="数据与排障"
                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                 <ui:Button x:Name="BtnDiag" Content="导出诊断包" Appearance="Primary"
@@ -314,41 +325,6 @@
           </ui:Card>
 
 
-          <!-- ==================== 应用更新（设置页同屏显示） ==================== -->
-          <ui:Card x:Name="CardUpdate" Grid.Row="2" Margin="0,12,0,0" Visibility="Collapsed">
-            <StackPanel>
-              <ui:TextBlock FontTypography="BodyStrong" Text="应用更新" />
-              <ui:TextBlock Margin="0,4,0,0" FontTypography="Caption" TextWrapping="Wrap"
-                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                            Text="从 GitHub 私有仓库的 Release 检查新版本；下载后校验 SHA256 再启动安装程序。" />
-
-              <Grid Margin="0,10,0,0">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="Auto" />
-                  <ColumnDefinition Width="*" />
-                  <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <ui:TextBlock Grid.Column="0" Text="当前版本" VerticalAlignment="Center" Margin="0,0,8,0" />
-                <ui:TextBlock x:Name="TxtAppVersion" Grid.Column="1" VerticalAlignment="Center"
-                              FontTypography="BodyStrong" Text="—" />
-                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                  <ui:Button x:Name="BtnCheckUpdate" Content="检查更新" Width="100" Height="32"
-                             Click="BtnCheckUpdate_Click" />
-                  <ui:Button x:Name="BtnDoSUpdate" Content="下载并安装" Width="120" Height="32" Margin="8,0,0,0"
-                             Appearance="Primary" IsEnabled="False" Click="BtnDoUpdate_Click" />
-                </StackPanel>
-              </Grid>
-
-              <ProgressBar x:Name="BarUpdate" Height="6" Margin="0,10,0,0" Minimum="0" Maximum="100"
-                           Value="0" Visibility="Collapsed" />
-
-              <ui:TextBlock x:Name="TxtUpdateStatus" Margin="0,8,0,0" FontTypography="Caption" TextWrapping="Wrap"
-                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="" />
-              <TextBox x:Name="TxtUpdateNotes" Margin="0,8,0,0" Height="120" IsReadOnly="True"
-                       TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Visibility="Collapsed"
-                       FontFamily="Consolas" FontSize="12" />
-            </StackPanel>
-          </ui:Card>
           <!-- ==================== 内核（winws / mihomo）导航页 ==================== -->
           <ui:Card x:Name="CardDrivers" Grid.Row="2" Margin="0,12,0,0" Visibility="Collapsed">
             <StackPanel>

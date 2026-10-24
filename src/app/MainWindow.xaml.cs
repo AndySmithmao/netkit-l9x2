@@ -274,9 +274,18 @@ namespace VrcTool
                     string legacy = DriverManager.LegacyServiceStatus();
                     if (legacy == "RUNNING" || legacy == "STOPPED")
                     {
-                        Append("[内核] 检测到旧服务 VRChatBypass（" + legacy + "）。");
-                        Append("       新版内核由程序自己托管；请到「设置 → 内核与代理…」点【迁移旧服务】，");
-                        Append("       并重启一次电脑让旧驱动对象清空，之后就不会再冲突。");
+                        Append("[内核] 检测到旧服务 VRChatBypass（" + legacy + "）—— 它会在开机时自己拉起 winws，");
+                        Append("       导致界面显示「已停止」但实际仍在跑。现在自动停用，内核全部由本程序托管。");
+                        try
+                        {
+                            string mig = DriverManager.MigrateLegacyService();
+                            foreach (string ln in mig.Split('\n'))
+                            {
+                                string t = ln.Trim();
+                                if (t.Length > 0) Append("       " + t);
+                            }
+                        }
+                        catch (Exception mex) { Append("[内核] 自动迁移失败: " + mex.Message); }
                     }
                 }
                 catch (Exception __ex) { Swallowed(__ex); }
@@ -957,7 +966,6 @@ namespace VrcTool
             bool isDrivers = it.Special == "drivers";
 
             CardSettings.Visibility = isSettings ? Visibility.Visible : Visibility.Collapsed;
-            if (CardUpdate != null) CardUpdate.Visibility = isSettings ? Visibility.Visible : Visibility.Collapsed;
             TxtSettingsInfo.Visibility = isSettings ? Visibility.Visible : Visibility.Collapsed;
             CardSub.Visibility = isSub ? Visibility.Visible : Visibility.Collapsed;
             CardNodes.Visibility = isNodes ? Visibility.Visible : Visibility.Collapsed;

@@ -19,8 +19,7 @@ namespace VrcTool
         {
             try
             {
-                TxtAppVersion.Text = Updater.CurrentVersion;
-                TxtUpdateStatus.Text = "点「检查更新」查询 GitHub Release。";
+                TxtUpdateStatus.Text = "当前版本 " + Updater.CurrentVersion + "，点按钮查看最新版本与更新说明。";
             }
             catch { }
         }
@@ -78,7 +77,7 @@ namespace VrcTool
                 if (appNewer)
                 {
                     lastUpdate = app;
-                    await InstallAppUpdateAsync(app);
+                    ShowUpdateWindow();
                     return;
                 }
                 await UpdateKernelsAsync(newer);
@@ -92,92 +91,28 @@ namespace VrcTool
 
         // ------------------------------------------------------------ 应用更新
 
-        private async void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
+        /// <summary>设置页的「检查更新」入口：打开独立更新窗口，版本 / 说明 / 进度都在窗口里。</summary>
+        private void BtnCheckUpdate_Click(object sender, RoutedEventArgs e)
         {
-            BtnCheckUpdate.IsEnabled = false;
-            BtnDoSUpdate.IsEnabled = false;
-            BarUpdate.Visibility = Visibility.Collapsed;
-            TxtUpdateNotes.Visibility = Visibility.Collapsed;
-            TxtUpdateStatus.Text = "正在查询 GitHub Release…";
+            ShowUpdateWindow();
+        }
+
+        /// <summary>打开更新窗口。启动检查发现新版本时也走这里。</summary>
+        private void ShowUpdateWindow()
+        {
             try
             {
-                UpdateCache.Clear();   // 手动检查：强制刷新，不吃缓存
-                lastUpdate = await Updater.CheckAsync(CancellationToken.None, true);
-                if (!string.IsNullOrEmpty(lastUpdate.Error))
-                {
-                    TxtUpdateStatus.Text = "检查失败：" + lastUpdate.Error;
-                    return;
-                }
-                TxtAppVersion.Text = Updater.CurrentVersion + "  →  最新 " + lastUpdate.Version;
-                if (lastUpdate.Newer)
-                {
-                    BtnDoSUpdate.IsEnabled = true;
-                    TxtUpdateStatus.Text = "发现新版本 " + lastUpdate.Tag +
-                        (lastUpdate.AssetSize > 0 ? "（" + Math.Round(lastUpdate.AssetSize / 1048576.0, 1) + " MB）" : "") +
-                        "，可下载并安装。";
-                }
-                else TxtUpdateStatus.Text = "已是最新版本（" + Updater.CurrentVersion + "）。";
-
-                if (!string.IsNullOrEmpty(lastUpdate.Notes))
-                {
-                    TxtUpdateNotes.Text = lastUpdate.Notes;
-                    TxtUpdateNotes.Visibility = Visibility.Visible;
-                }
+                UpdateWindow w = new UpdateWindow();
+                w.Owner = this;
+                w.ShowDialog();
+                TxtUpdateStatus.Text = "当前版本 " + Updater.CurrentVersion;
+                Append("[更新] 已打开更新窗口");
             }
             catch (Exception ex)
             {
-                TxtUpdateStatus.Text = "检查异常：" + ex.Message;
-                DriverManager.Log("更新检查异常: " + ex);
+                DriverManager.Log("打开更新窗口失败: " + ex.Message);
+                TxtUpdateStatus.Text = "打开更新窗口失败：" + ex.Message;
             }
-            finally { BtnCheckUpdate.IsEnabled = true; }
-        }
-
-        private async void BtnDoUpdate_Click(object sender, RoutedEventArgs e)
-        {
-            if (lastUpdate == null || !lastUpdate.Newer) return;
-            await InstallAppUpdateAsync(lastUpdate);
-        }
-
-        private async Task InstallAppUpdateAsync(UpdateInfo info)
-        {
-            BtnCheckUpdate.IsEnabled = false;
-            BtnDoSUpdate.IsEnabled = false;
-            BarUpdate.Visibility = Visibility.Visible;
-            BarUpdate.Value = 0;
-            string dest = Path.Combine(Path.GetTempPath(), "VrcTool-update-" + info.Version + ".exe");
-            try
-            {
-                TxtUpdateStatus.Text = "正在下载 " + info.AssetName + " …";
-                Append("[更新] 开始下载应用更新 " + info.Version);
-                Progress<int> prog = new Progress<int>(p =>
-                {
-                    try { BarUpdate.Value = p; TxtUpdateStatus.Text = "正在下载… " + p + "%"; } catch { }
-                });
-                string err = await Updater.DownloadAsync(info, dest, prog, CancellationToken.None);
-                if (!string.IsNullOrEmpty(err))
-                {
-                    TxtUpdateStatus.Text = "更新失败：" + err;
-                    Append("[更新] 下载失败: " + err);
-                    BarUpdate.Visibility = Visibility.Collapsed;
-                    return;
-                }
-                TxtUpdateStatus.Text = "下载完成，SHA256 已核对，正在启动安装程序…";
-                Append("[更新] 应用更新包已下载: " + dest);
-                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dest) { UseShellExecute = true }); }
-                catch (Exception ex)
-                {
-                    TxtUpdateStatus.Text = "无法启动安装程序：" + ex.Message + "\r\n文件位置：" + dest;
-                    return;
-                }
-                await Task.Delay(1500);
-                Application.Current.Shutdown();
-            }
-            catch (Exception ex)
-            {
-                TxtUpdateStatus.Text = "更新异常：" + ex.Message;
-                DriverManager.Log("应用更新异常: " + ex);
-            }
-            finally { BtnCheckUpdate.IsEnabled = true; }
         }
 
         // ------------------------------------------------------------ 内核更新
@@ -187,8 +122,6 @@ namespace VrcTool
             if (updatingKernel) return;
             updatingKernel = true;
             BtnCheckUpdate.IsEnabled = false;
-            BarUpdate.Visibility = Visibility.Visible;
-            BarUpdate.IsIndeterminate = true;
             try
             {
                 foreach (KernelUpdate k in list)
@@ -220,8 +153,6 @@ namespace VrcTool
             {
                 updatingKernel = false;
                 BtnCheckUpdate.IsEnabled = true;
-                BarUpdate.IsIndeterminate = false;
-                BarUpdate.Visibility = Visibility.Collapsed;
             }
         }
     }

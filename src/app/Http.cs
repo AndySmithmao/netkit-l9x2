@@ -37,7 +37,9 @@ namespace VrcTool
         public static HttpClient Create(int timeoutSeconds = 25, string userAgent = null)
         {
             HttpClient c = new HttpClient(SharedHandler, false);
-            c.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+            // timeoutSeconds <= 0 表示不设总超时：内核包 22~61 MB，25 秒总超时会把大文件直接取消
+            // （现象是 "The operation was canceled."）。取消由调用方的 CancellationToken 控制。
+            c.Timeout = timeoutSeconds <= 0 ? System.Threading.Timeout.InfiniteTimeSpan : TimeSpan.FromSeconds(timeoutSeconds);
             c.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent ?? "VRChat-Selector/1.0");
             return c;
         }

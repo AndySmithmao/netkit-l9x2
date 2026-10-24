@@ -25,10 +25,14 @@ namespace VrcTool
         public string LastError = "";
         public DateTime StartedAt = DateTime.MinValue;
 
+        /// <summary>进程不是本程序拉起的（例如旧版注册的 VRChatBypass 服务、或用户手工启动）。</summary>
+        public bool External;
+
         public string StatusText
         {
             get
             {
+                if (Running && External) return "运行中（外部进程" + (Pid > 0 ? " PID " + Pid : "") + "，本程序未托管）";
                 if (Running) return "运行中" + (Pid > 0 ? "（PID " + Pid + "）" : "");
                 if (!string.IsNullOrEmpty(LastError)) return "已停止（" + LastError + "）";
                 return "已停止";
@@ -106,11 +110,29 @@ namespace VrcTool
                 Process p;
                 procs.TryGetValue(kind, out p);
                 bool running = p != null && !p.HasExited;
+                bool external = false;
+                int pid = running ? SafePid(p) : 0;
+
+                // 本程序只记自己拉起的子进程。旧版留下的 VRChatBypass 服务（SCM 拉起）
+                // 或用户手工启动的实例不在这里，以前 UI 会显示"已停止"，
+                // 实际却在跑 —— 这里补一次按进程名查找。
+                if (!running)
+                {
+                    Process ext = FindExternal(kind);
+                    if (ext != null)
+                    {
+                        running = true;
+                        external = true;
+                        pid = SafePid(ext);
+                    }
+                }
+
                 DriverState st = new DriverState();
                 st.Kind = kind;
                 st.DisplayName = kind == DriverKind.Winws ? "winws（DPI 伪装）" : "mihomo（代理内核）";
                 st.Running = running;
-                st.Pid = running ? SafePid(p) : 0;
+                st.External = external;
+                st.Pid = pid;
                 st.Dir = DirOf(kind);
                 string ver;
                 if (versions.TryGetValue(kind, out ver) && !string.IsNullOrEmpty(ver)) st.Version = ver;
@@ -344,7 +366,14 @@ namespace VrcTool
                 {
                     string m;
                     if (IsRunning(k)) Stop(k, true, out m);
-                    else SweepOrphans(k);
+                    // 非本程序托管的实例（旧服务、手工启动）也要清，否则"退出应用停止内核"不成立
+                    Process ext = FindExternal(k);
+                    if (ext != null)
+                    {
+                        Log("停止外部实例 " + k + " pid=" + SafePid(ext));
+                        KillTree(SafePid(ext));
+                    }
+                    SweepOrphans(k);
                 }
                 catch (Exception ex) { Log("StopAll " + k + " 异常: " + ex.Message); }
             }
@@ -354,6 +383,31 @@ namespace VrcTool
         /// 清理"上次没退干净"的进程：只杀 可执行文件路径落在我们 drivers 目录下的进程，
         /// 绝不按进程名乱杀（用户可能自己在别处跑 mihomo）。
         /// </summary>
+        /// <summary>
+        /// 找出不是本程序托管的同名进程（旧版服务 VRChatBypass、或用户手工启动的实例）。
+        /// 只按进程名查，不做路径过滤 —— 旧服务跑的是安装目录 tools\ 下的副本。
+        /// </summary>
+        public static Process FindExternal(DriverKind kind)
+        {
+            string name = kind == DriverKind.Winws ? "winws" : "mihomo";
+            try
+            {
+                foreach (Process p in Process.GetProcessesByName(name))
+                {
+                    try
+                    {
+                        Process mine;
+                        if (procs.TryGetValue(kind, out mine) && mine != null && !mine.HasExited && SafePid(mine) == p.Id) continue;
+                        return p;
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+
         public static int SweepOrphans(DriverKind kind)
         {
             int killed = 0;
@@ -369,7 +423,13 @@ namespace VrcTool
                         string path = null;
                         try { path = p.MainModule.FileName; } catch { }
                         if (string.IsNullOrEmpty(path)) continue;
-                        if (!path.StartsWith(dir, StringComparison.OrdinalIgnoreCase)) continue;
+                        // 老版本从安装目录的 tools\ 里直接跑（服务就是这么注册的），
+                        // 因此除了数据目录，安装目录也要认。
+                        string appDir = AppDomain.CurrentDomain.BaseDirectory;
+                        bool ours = path.StartsWith(dir, StringComparison.OrdinalIgnoreCase)
+                                 || path.StartsWith(RootDir, StringComparison.OrdinalIgnoreCase)
+                                 || (appDir != null && path.StartsWith(appDir, StringComparison.OrdinalIgnoreCase));
+                        if (!ours) continue;
                         KillTree(p.Id);
                         killed++;
                         Log("清扫残留 " + kind + " pid=" + p.Id + " " + path);
@@ -677,10 +737,17 @@ namespace VrcTool
                     b.AppendLine(RunTool("sc.exe", "stop VRChatBypass", 15000));
                     System.Threading.Thread.Sleep(1500);
                 }
-                b.AppendLine(RunTool("sc.exe", "config VRChatBypass start= disabled", 8000));
-                b.AppendLine("");
-                b.AppendLine("已把旧服务设为「禁用」，重启后不会再自启。");
-                b.AppendLine("建议重启一次：让 WinDivert 的残留对象彻底清空，之后内核全部由本程序托管。");
+
+                // 直接删除服务，而不是只禁用：
+                // 禁用的服务键还留在系统里，用户排查时会看到"还有个 VRChatBypass"，
+                // 而且它指向安装目录的 winws 副本，容易和新模型混起来。
+                b.AppendLine(RunTool("sc.exe", "delete VRChatBypass", 10000));
+
+                string chk = RunTool("sc.exe", "query VRChatBypass", 5000);
+                if (chk != null && chk.Contains("1060"))
+                    b.AppendLine("旧服务已删除。内核现在完全由本程序托管（启停即进程启停）。");
+                else
+                    b.AppendLine("删除未成功，服务仍在；可稍后手动执行：sc delete VRChatBypass");
                 Log("迁移旧服务:\r\n" + b.ToString());
             }
             catch (Exception ex)
